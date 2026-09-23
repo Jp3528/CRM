@@ -24,6 +24,7 @@
             @if ($canUpdate)<a href="{{ route('companies.edit', $company) }}" class="text-slate-700 hover:underline">Editar</a>@endif
             @can('create', App\Models\Task::class)<a href="{{ route('tasks.create', ['related' => 'company:'.$company->id]) }}" class="text-slate-700 hover:underline">Nueva tarea</a>@endcan
             @can('create', App\Models\Activity::class)<a href="{{ route('activities.create', ['related' => 'company:'.$company->id]) }}" class="text-slate-700 hover:underline">Registrar actividad</a>@endcan
+            @can('create', App\Models\Ticket::class)<a href="{{ route('tickets.create', ['company_id' => $company->id]) }}" class="text-slate-700 hover:underline">Nuevo ticket</a>@endcan
             @can('delete', $company)
                 <form method="POST" action="{{ route('companies.destroy', $company) }}" class="inline"
                     x-data @submit.prevent="if (confirm('¿Eliminar {{ $company->trade_name }}? Los contactos asociados se conservan.')) $el.submit()">
@@ -94,6 +95,26 @@
     </x-card>
 
     @include('partials.timeline', ['subject' => $company])
+
+    @if ($canViewTickets)
+        <x-card title="Tickets recientes" subtitle="Casos de soporte de la empresa">
+            @if ($company->tickets->isEmpty())
+                <p class="text-sm text-slate-500">Sin tickets.
+                    @can('create', App\Models\Ticket::class)<a href="{{ route('tickets.create', ['company_id' => $company->id]) }}" class="hover:underline">Abrir el primero</a>@endcan
+                </p>
+            @else
+                <ul class="divide-y divide-slate-100 text-sm">
+                    @foreach ($company->tickets as $ticket)
+                        <li class="flex items-center gap-2 py-2">
+                            <a href="{{ route('tickets.show', $ticket) }}" class="font-mono font-medium hover:underline">{{ $ticket->number }}</a>
+                            <span class="truncate">{{ $ticket->subject }}</span>
+                            <span class="ml-auto"><x-status-badge :status="$ticket->status" :label="ucfirst($ticket->status)" /></span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </x-card>
+    @endif
 
     @if ($canViewQuotes)
         <x-card title="Cotizaciones recientes" subtitle="Últimos documentos de la empresa">

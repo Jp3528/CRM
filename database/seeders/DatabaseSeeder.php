@@ -5,8 +5,6 @@ namespace Database\Seeders;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Lead;
-use App\Models\Role;
-use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -17,28 +15,20 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        $this->call([RoleSeeder::class, PermissionSeeder::class, PipelineSeeder::class, ProductSeeder::class]);
+        $this->call([RoleSeeder::class, PermissionSeeder::class, PipelineSeeder::class, ProductSeeder::class, TicketCategorySeeder::class]);
 
         if (app()->environment('testing')) {
             return;
         }
 
-        $team = Team::firstOrCreate(
-            ['slug' => 'equipo-comercial'],
-            ['name' => 'Equipo comercial', 'description' => 'Equipo demo de Fase 1.', 'status' => 'active']
-        );
-
-        $user = User::firstOrCreate(
-            ['email' => 'demo@nexuscrm.local'],
-            ['name' => 'Usuario Demo', 'password' => 'password', 'team_id' => $team->id, 'status' => 'active']
-        );
-
-        // Usuario de desarrollo con acceso total (idempotente, sin duplicados).
-        // Contraseña demo solo para entorno local: ver README Fase 2.
-        $super = Role::where('name', 'Superadministrador')->first();
-        if ($super) {
-            $user->roles()->syncWithoutDetaching([$super->id]);
+        // Datos de desarrollo: nunca en producción.
+        if (app()->environment('production')) {
+            return;
         }
+
+        $this->call(DemoUserSeeder::class);
+
+        $user = User::where('email', DemoUserSeeder::EMAIL)->firstOrFail();
 
         $companies = Company::factory(3)->create(['owner_id' => $user->id]);
         foreach ($companies as $company) {

@@ -1,4 +1,4 @@
-@props(['status' => 'active'])
+@props(['status' => 'active', 'label' => null])
 
 @php
 $map = [
@@ -10,6 +10,8 @@ $map = [
     'cancelled' => ['slate', 'Cancelada'],
     'new' => ['blue', 'Nuevo'],
     'contacted' => ['yellow', 'Contactado'],
+    'resolved' => ['green', 'Resuelto'],
+    'closed' => ['slate', 'Cerrado'],
     'qualified' => ['green', 'Calificado'],
     'unqualified' => ['slate', 'No calificado'],
     'converted' => ['blue', 'Convertido'],
@@ -23,7 +25,7 @@ $map = [
     'rejected' => ['red', 'Rechazada'],
     'expired' => ['yellow', 'Vencida'],
 ];
-[$color, $label] = $map[$status] ?? ['slate', ucfirst($status)];
+[$color, $defaultLabel] = $map[$status] ?? ['slate', ucfirst($status)];
 @endphp
 
-<x-badge :color="$color">{{ $label }}</x-badge>
+<x-badge :color="$color">{{ $label ?? $defaultLabel }}</x-badge>

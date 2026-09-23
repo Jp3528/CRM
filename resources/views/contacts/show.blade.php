@@ -24,6 +24,7 @@
             @if ($canUpdate)<a href="{{ route('contacts.edit', $contact) }}" class="text-slate-700 hover:underline">Editar</a>@endif
             @can('create', App\Models\Task::class)<a href="{{ route('tasks.create', ['related' => 'contact:'.$contact->id]) }}" class="text-slate-700 hover:underline">Nueva tarea</a>@endcan
             @can('create', App\Models\Activity::class)<a href="{{ route('activities.create', ['related' => 'contact:'.$contact->id]) }}" class="text-slate-700 hover:underline">Registrar actividad</a>@endcan
+            @can('create', App\Models\Ticket::class)<a href="{{ route('tickets.create', ['company_id' => $contact->company_id, 'contact_id' => $contact->id]) }}" class="text-slate-700 hover:underline">Nuevo ticket</a>@endcan
             @can('delete', $contact)
                 <form method="POST" action="{{ route('contacts.destroy', $contact) }}" class="inline"
                     x-data @submit.prevent="if (confirm('¿Eliminar a {{ $contact->full_name }}?')) $el.submit()">
@@ -61,6 +62,20 @@
     </div>
 
     @include('partials.timeline', ['subject' => $contact])
+
+    @if ($canViewTickets && $contact->tickets->isNotEmpty())
+        <x-card title="Tickets recientes" subtitle="Casos del contacto">
+            <ul class="divide-y divide-slate-100 text-sm">
+                @foreach ($contact->tickets as $ticket)
+                    <li class="flex items-center gap-2 py-2">
+                        <a href="{{ route('tickets.show', $ticket) }}" class="font-mono font-medium hover:underline">{{ $ticket->number }}</a>
+                        <span class="truncate">{{ $ticket->subject }}</span>
+                        <span class="ml-auto"><x-status-badge :status="$ticket->status" :label="ucfirst($ticket->status)" /></span>
+                    </li>
+                @endforeach
+            </ul>
+        </x-card>
+    @endif
 
     @if ($canViewQuotes && $contact->quotes->isNotEmpty())
         <x-card title="Cotizaciones recientes" subtitle="Documentos del contacto">

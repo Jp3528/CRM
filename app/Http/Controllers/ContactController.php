@@ -100,6 +100,7 @@ class ContactController extends Controller
             'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
             'quotes' => fn ($q) => $q->latest()->limit(5),
             'invoices' => fn ($q) => $q->latest()->limit(5),
+            'tickets' => fn ($q) => $q->latest()->limit(5),
         ]);
 
         return view('contacts.show', [
@@ -107,6 +108,7 @@ class ContactController extends Controller
             'canUpdate' => request()->user()->can('update', $contact),
             'canViewQuotes' => request()->user()->can('viewAny', \App\Models\Quote::class),
             'canViewInvoices' => request()->user()->can('viewAny', \App\Models\Invoice::class),
+            'canViewTickets' => request()->user()->can('viewAny', \App\Models\Ticket::class),
         ]);
     }
 

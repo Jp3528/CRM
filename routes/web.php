@@ -24,11 +24,14 @@ use App\Http\Controllers\SaleStatusController;
 use App\Http\Controllers\SaleToInvoiceController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskStatusController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketMessageController;
+use App\Http\Controllers\TicketStatusController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| NexusCRM Fase 8 — Ventas + facturación interna (Policies por módulo)
+| NexusCRM Fase 9 — Tickets de soporte (Policies por módulo)
 */
 
 // Landing pública mínima (conserva GET / 200 de Fase 1).
@@ -111,6 +114,21 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('activities', ActivityController::class);
 
     Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
+
+    // Tickets de soporte (Fase 9).
+    Route::resource('tickets', TicketController::class);
+    Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store'])
+        ->name('tickets.messages.store');
+    Route::patch('tickets/{ticket}/open', [TicketStatusController::class, 'open'])
+        ->name('tickets.open');
+    Route::patch('tickets/{ticket}/pending', [TicketStatusController::class, 'pending'])
+        ->name('tickets.pending');
+    Route::patch('tickets/{ticket}/resolve', [TicketStatusController::class, 'resolve'])
+        ->name('tickets.resolve');
+    Route::patch('tickets/{ticket}/reopen', [TicketStatusController::class, 'reopen'])
+        ->name('tickets.reopen');
+    Route::patch('tickets/{ticket}/close', [TicketStatusController::class, 'close'])
+        ->name('tickets.close');
 
     // Productos + cotizaciones (Fase 7).
     Route::resource('products', ProductController::class);

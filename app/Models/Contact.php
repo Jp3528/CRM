@@ -55,6 +55,12 @@ class Contact extends Model
         return $this->hasMany(Invoice::class)->latest();
     }
 
+    /** @return HasMany<Ticket, $this> */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class)->latest();
+    }
+
     /** @return MorphToMany<Tag, $this> */
     public function tags(): MorphToMany
     {

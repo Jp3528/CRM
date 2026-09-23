@@ -36,6 +36,10 @@ class PermissionSeeder extends Seeder
         ['name' => 'invoices.create', 'label' => 'Create Invoices', 'description' => 'Permite generar facturas internas desde ventas.', 'group' => 'invoices'],
         ['name' => 'invoices.update', 'label' => 'Update Invoices', 'description' => 'Permite cambiar el estado de facturas internas.', 'group' => 'invoices'],
         ['name' => 'invoices.delete', 'label' => 'Delete Invoices', 'description' => 'Permite eliminar facturas internas.', 'group' => 'invoices'],
+        ['name' => 'tickets.view', 'label' => 'View Tickets', 'description' => 'Permite ver tickets de soporte.', 'group' => 'tickets'],
+        ['name' => 'tickets.create', 'label' => 'Create Tickets', 'description' => 'Permite crear tickets de soporte.', 'group' => 'tickets'],
+        ['name' => 'tickets.update', 'label' => 'Update Tickets', 'description' => 'Permite editar tickets, asignar y cambiar su estado.', 'group' => 'tickets'],
+        ['name' => 'tickets.delete', 'label' => 'Delete Tickets', 'description' => 'Permite eliminar tickets de soporte.', 'group' => 'tickets'],
     ];
 
     public function run(): void

@@ -12,7 +12,7 @@
             Lead convertido el {{ $lead->converted_at?->format('Y-m-d H:i') }}.
             @if ($lead->convertedCompany)<a href="{{ route('companies.show', $lead->convertedCompany) }}" class="font-medium hover:underline">Ver empresa: {{ $lead->convertedCompany->trade_name }}</a>@endif
             @if ($lead->convertedContact)<span class="mx-1">·</span><a href="{{ route('contacts.show', $lead->convertedContact) }}" class="font-medium hover:underline">Ver contacto: {{ $lead->convertedContact->full_name }}</a>@endif
-            @if ($lead->opportunities->isNotEmpty())<span class="mx-1">·</span><span>Oportunidad(es) registrada(s) como dato backend (interfaz completa en Fase 5).</span>@endif
+            @if ($lead->opportunities->isNotEmpty())<span class="mx-1">·</span><span>{{ $lead->opportunities->count() }} oportunidad(es) vinculada(s).</span>@endif
         </div>
     @endif
 
@@ -89,7 +89,7 @@
     </div>
 
     @if ($lead->opportunities->isNotEmpty())
-        <x-card title="Oportunidades (dato backend)" subtitle="La interfaz completa llega en Fase 5">
+        <x-card title="Oportunidades vinculadas" subtitle="Generadas desde este lead">
             <ul class="divide-y divide-slate-100 text-sm">
                 @foreach ($lead->opportunities as $opp)
                     <li class="py-2">

@@ -98,6 +98,7 @@ class CompanyController extends Controller
             'quotes' => fn ($q) => $q->latest()->limit(5),
             'sales' => fn ($q) => $q->latest()->limit(5),
             'invoices' => fn ($q) => $q->latest()->limit(5),
+            'tickets' => fn ($q) => $q->latest()->limit(5),
         ])->loadCount('contacts');
 
         return view('companies.show', [
@@ -107,6 +108,7 @@ class CompanyController extends Controller
             'canViewQuotes' => request()->user()->can('viewAny', \App\Models\Quote::class),
             'canViewSales' => request()->user()->can('viewAny', \App\Models\Sale::class),
             'canViewInvoices' => request()->user()->can('viewAny', \App\Models\Invoice::class),
+            'canViewTickets' => request()->user()->can('viewAny', \App\Models\Ticket::class),
         ]);
     }
 

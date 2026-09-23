@@ -105,7 +105,7 @@ class LeadController extends Controller
         return view('leads.show', [
             'lead' => $lead,
             'canUpdate' => $user->can('update', $lead),
-            'canConvert' => ! $lead->isConverted() && $user->can('convert', $lead),
+            'canConvert' => $lead->status === 'qualified' && $user->can('convert', $lead),
         ]);
     }
 

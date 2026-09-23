@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Sale;
 use App\Models\Task;
+use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -90,6 +91,20 @@ class DashboardController extends Controller
                 : collect(),
             'canSeeSales' => $user->can('viewAny', Sale::class),
             'canSeeInvoices' => $user->can('viewAny', Invoice::class),
+            'openTickets' => $user->can('viewAny', Ticket::class)
+                ? Ticket::whereIn('status', ['new', 'open', 'pending'])->count()
+                : 0,
+            'urgentTickets' => $user->can('viewAny', Ticket::class)
+                ? Ticket::with('company:id,trade_name')->where('priority', 'urgent')
+                    ->whereNotIn('status', ['resolved', 'closed'])->latest()->limit(5)->get()
+                : collect(),
+            'unassignedTickets' => $user->can('viewAny', Ticket::class)
+                ? Ticket::whereNull('assigned_to')->whereNotIn('status', ['resolved', 'closed'])->count()
+                : 0,
+            'pendingTickets' => $user->can('viewAny', Ticket::class)
+                ? Ticket::where('status', 'pending')->count()
+                : 0,
+            'canSeeTickets' => $user->can('viewAny', Ticket::class),
         ]);
     }
 }

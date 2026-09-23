@@ -46,12 +46,13 @@
                 @can('quotes.view')<li><a class="text-slate-700 hover:underline" href="{{ route('quotes.index') }}">· Cotizaciones</a></li>@endcan
                 @can('sales.view')<li><a class="text-slate-700 hover:underline" href="{{ route('sales.index') }}">· Ventas</a></li>@endcan
                 @can('invoices.view')<li><a class="text-slate-700 hover:underline" href="{{ route('invoices.index') }}">· Facturas</a></li>@endcan
+                @can('tickets.view')<li><a class="text-slate-700 hover:underline" href="{{ route('tickets.index') }}">· Tickets</a></li>@endcan
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan
                 <li><a class="text-slate-700 hover:underline" href="{{ route('profile.edit') }}">· Mi perfil</a></li>
             </ul>
         </x-card>
 
-        <x-card title="Estado del sistema" subtitle="Base operativa de Fase 2">
+        <x-card title="Estado del sistema" subtitle="Base operativa del sistema">
             <ul class="space-y-2 text-sm text-slate-600">
                 <li>· Autenticación web activa con regeneración de sesión.</li>
                 <li>· RBAC operativo (roles, permisos directos, Superadministrador).</li>
@@ -186,6 +187,31 @@
                     @endif
                 </x-card>
             @endif
+        </div>
+    @endif
+
+    @if ($canSeeTickets)
+        <div class="grid gap-4 md:grid-cols-2">
+            <x-card title="Soporte abierto ({{ $openTickets }})" subtitle="Casos sin resolver ni cerrar">
+                <dl class="grid grid-cols-3 gap-2 text-center text-sm">
+                    <div class="rounded-md bg-slate-50 px-2 py-3"><dt class="text-xs text-slate-500">Abiertos</dt><dd class="text-lg font-semibold">{{ $openTickets }}</dd></div>
+                    <div class="rounded-md bg-slate-50 px-2 py-3"><dt class="text-xs text-slate-500">Sin asignar</dt><dd class="text-lg font-semibold">{{ $unassignedTickets }}</dd></div>
+                    <div class="rounded-md bg-slate-50 px-2 py-3"><dt class="text-xs text-slate-500">Pendientes</dt><dd class="text-lg font-semibold">{{ $pendingTickets }}</dd></div>
+                </dl>
+                <p class="mt-2 text-sm"><a href="{{ route('tickets.index') }}" class="text-slate-700 hover:underline">Ver tickets →</a></p>
+            </x-card>
+            <x-card title="Urgentes sin cerrar ({{ $urgentTickets->count() }})" subtitle="Prioridad máxima">
+                @if ($urgentTickets->isEmpty())
+                    <p class="text-sm text-slate-500">Sin urgentes pendientes.</p>
+                @else
+                    <ul class="space-y-2 text-sm">
+                        @foreach ($urgentTickets as $ticket)
+                            <li><a href="{{ route('tickets.show', $ticket) }}" class="font-mono hover:underline">{{ $ticket->number }}</a>
+                                <span class="text-xs text-slate-400">· {{ \Illuminate\Support\Str::limit($ticket->subject, 40) }}</span></li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-card>
         </div>
     @endif
 @endsection

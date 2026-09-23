@@ -13,6 +13,9 @@ $navSections = [
         ['label' => 'Actividades', 'route' => 'activities.index', 'can' => 'activities.view', 'soon' => false],
         ['label' => 'Calendario', 'route' => 'calendar.index', 'can_any' => ['tasks.view', 'activities.view'], 'soon' => false],
     ]],
+    ['title' => 'Soporte', 'items' => [
+        ['label' => 'Tickets', 'route' => 'tickets.index', 'can' => 'tickets.view', 'soon' => false],
+    ]],
     ['title' => 'Ventas', 'items' => [
         ['label' => 'Productos', 'route' => 'products.index', 'can' => 'products.view', 'soon' => false],
         ['label' => 'Cotizaciones', 'route' => 'quotes.index', 'can' => 'quotes.view', 'soon' => false],

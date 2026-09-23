@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 8: Ventas + facturación interna.
+CRM empresarial web construido con Laravel. Fase 9: Tickets de soporte.
 
 ## Stack
 
@@ -283,7 +283,45 @@ separados (transiciones usan `quotes.update`).
   widgets de dashboard (pendientes + próximas a vencer), vista imprimible HTML
   (sin sidebar/topbar/acciones; sin librería PDF).
 - Sidebar con secciones CRM/Trabajo/Ventas/Administración; Productos y Cotizaciones
-  activos por permiso.
+  activos por permiso. Ventas y Facturas añadidos en Fase 8.
+
+## Fase 9 — Tickets + soporte al cliente
+
+Sin estructuras previas: 2 migraciones incrementales (`ticket_categories`+`tickets`,
+`ticket_messages`; 27/27 Ran). Permisos `tickets.view/create/update/delete`
+idempotentes; `TicketPolicy` con patrón del proyecto. Sin `tickets.assign` separado
+(decisión: `tickets.update` cubre asignación y transiciones).
+
+- Correcciones previas incluidas y testeadas: `DemoUserSeeder` dedicado (idempotente,
+  con guardia anti-producción en `DatabaseSeeder`); sin textos internos de fase en UI
+  (footer, dashboard, placeholders, ficha de lead); botón Convertir solo en qualified
+  (backend intacto).
+- Tickets: `number unique TKT-AAAA-NNNNNN` (ID, concurrent-safe), `company_id?`
+  (nullable para prospectos; sin contacto exige nombre/email del solicitante),
+  `contact_id?` (coherente con empresa), `requester_name/email?`, `assigned_to?`
+  (activos, preservando inactivo existente), `created_by = Auth::id()`,
+  `category_id?`, `subject/description`, `status new/open/pending/resolved/closed`,
+  `priority low/medium/high/urgent`, `channel web/email/phone/manual/other`
+  (clasificación, sin recepción real), `first_response_at?/resolved_at?/closed_at?/
+  last_reply_at?`, SoftDeletes.
+- Categorías relacionales simples (`General, Facturación, Comercial,
+  Soporte técnico`, idempotentes, sin jerarquía).
+- Conversación cronológica con triple distinción visual: respuesta
+  (`is_internal=false`), nota interna (`true`) y evento system. Cuerpos escapados
+  (XSS verificado en test). Sin borrado de mensajes en UI (histórico).
+- `TicketStatusService`: matriz centralizada (new→open/pending, open→pending/
+  resolved, pending→open/resolved, resolved→closed/open, closed→open; solo resolved
+  cierra), no-op sin evento, `lockForUpdate` + transacción con evento system.
+- Primera respuesta (solo reply de usuario) fija `first_response_at` una vez y
+  `last_reply_at` siempre; notas y system no mueven relojes; en cerrado solo cabe
+  reabrir. Métricas `first_response_seconds`/`resolution_seconds` por accessors.
+- Listado con presets (mis/sin-asignar/abiertos/pendientes/urgentes), búsqueda
+  (número/asunto/descripción/empresa/contacto/solicitante), filtros combinables,
+  whitelist (`number, priority, status, created_at, updated_at, last_reply_at`),
+  paginación 15. Ficha helpdesk con tiempos, conversación y formularios duales.
+- Integraciones: tickets recientes + "Nuevo ticket" preseleccionado en empresa y
+  contacto; dashboard (abiertos/sin-asignar/pendientes + urgentes top 5).
+  Sin vínculo a ventas/facturas (categoría Facturación basta) ni tareas automáticas.
 
 ## Fase 8 — Ventas + facturación interna (no fiscal)
 
@@ -368,15 +406,19 @@ búsqueda/filtros/sorting/paginación, transiciones con timestamps, conversión
 Quote→Sale exacta, doble conversión/facturación rechazadas, snapshots en 3 niveles,
 transiciones de factura, vencida calculada, integraciones y dashboard.
 
++ Fase 9 (`tests/Feature/PhaseNineTest`, 23 tests): correcciones UX verificadas,
+CRUD tickets, 403 (10 ops), validación + solicitante + coherencia, conversación
+(reply/nota/relojes/cierre/XSS), transiciones completas + inválidas + no-op,
+métricas deterministas, integraciones y dashboard.
+
 ## Frontend
 
 ```sh
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 8)
+## Alcance actual (Fase 9)
 
-Ventas + facturación interna funcionan. Todo lo anterior continúa activo.
-Las facturas son documentos internos NO fiscales, sin pagos reales. Todavía NO hay:
-pasarelas, facturación electrónica/SUNAT/SAT/DIAN, inventario, compras, contabilidad,
-tickets, campañas, automatizaciones, reportes avanzados, API ni webhooks.
+Tickets de soporte funcionan completamente. Todo lo anterior continúa activo.
+Sin email real, portal de cliente, SLA automatizado, base de conocimiento, chat,
+automatizaciones, IA, reportes avanzados, API ni integraciones externas.

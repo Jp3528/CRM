@@ -26,7 +26,7 @@
                 </div>
 
                 <footer class="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-400">
-                    {{ config('app.name', 'NexusCRM') }} · Fase 2 · {{ now()->format('Y-m-d H:i') }}
+                    {{ config('app.name', 'NexusCRM') }} · {{ now()->format('Y-m-d H:i') }}
                 </footer>
             </main>
         </div>
