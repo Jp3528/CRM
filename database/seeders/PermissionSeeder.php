@@ -16,6 +16,10 @@ class PermissionSeeder extends Seeder
     /** Permisos adicionales fuera de la matriz módulo×acción (idempotentes). */
     public const EXTRA = [
         ['name' => 'leads.convert', 'label' => 'Convert Leads', 'description' => 'Permite convertir leads en empresa/contacto (y oportunidad opcional).', 'group' => 'leads'],
+        ['name' => 'activities.view', 'label' => 'View Activities', 'description' => 'Permite ver actividades.', 'group' => 'activities'],
+        ['name' => 'activities.create', 'label' => 'Create Activities', 'description' => 'Permite registrar actividades manuales.', 'group' => 'activities'],
+        ['name' => 'activities.update', 'label' => 'Update Activities', 'description' => 'Permite editar actividades manuales.', 'group' => 'activities'],
+        ['name' => 'activities.delete', 'label' => 'Delete Activities', 'description' => 'Permite eliminar actividades manuales.', 'group' => 'activities'],
     ];
 
     public function run(): void

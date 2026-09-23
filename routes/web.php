@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
@@ -11,11 +13,13 @@ use App\Http\Controllers\LeadConversionController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\OpportunityStageController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskStatusController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| NexusCRM Fase 5 — Oportunidades + pipeline + Kanban (Policies por módulo)
+| NexusCRM Fase 6 — Tareas + actividades + calendario (Policies por módulo)
 */
 
 // Landing pública mínima (conserva GET / 200 de Fase 1).
@@ -86,10 +90,21 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::patch('opportunities/{opportunity}/stage', [OpportunityStageController::class, 'update'])
         ->name('opportunities.stage.update');
 
+    // Tareas + actividades + calendario comercial (Fase 6).
+    Route::resource('tasks', TaskController::class);
+    Route::patch('tasks/{task}/complete', [TaskStatusController::class, 'complete'])
+        ->name('tasks.complete');
+    Route::patch('tasks/{task}/reopen', [TaskStatusController::class, 'reopen'])
+        ->name('tasks.reopen');
+    Route::patch('tasks/{task}/cancel', [TaskStatusController::class, 'cancel'])
+        ->name('tasks.cancel');
+
+    Route::resource('activities', ActivityController::class);
+
+    Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
+
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([
-        'tasks' => 'Tareas',
-        'activities' => 'Actividades',
         'teams' => 'Equipos',
         'roles' => 'Roles y permisos',
         'settings' => 'Configuración',

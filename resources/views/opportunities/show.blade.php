@@ -23,6 +23,8 @@
         @endforeach
         <span class="ml-auto flex gap-2 text-sm">
             @if ($canUpdate)<a href="{{ route('opportunities.edit', $opportunity) }}" class="text-slate-700 hover:underline">Editar</a>@endif
+            @can('create', App\Models\Task::class)<a href="{{ route('tasks.create', ['related' => 'opportunity:'.$opportunity->id]) }}" class="text-slate-700 hover:underline">Nueva tarea</a>@endcan
+            @can('create', App\Models\Activity::class)<a href="{{ route('activities.create', ['related' => 'opportunity:'.$opportunity->id]) }}" class="text-slate-700 hover:underline">Registrar actividad</a>@endcan
             @can('delete', $opportunity)
                 <form method="POST" action="{{ route('opportunities.destroy', $opportunity) }}" class="inline"
                     x-data @submit.prevent="if (confirm('¿Eliminar {{ $opportunity->name }}? No afecta empresa/contacto/lead.')) $el.submit()">
@@ -93,52 +95,5 @@
         </x-card>
     @endif
 
-    <x-card title="Historial de etapas" subtitle="{{ $opportunity->stageHistory->count() }} movimiento(s)">
-        @if ($opportunity->stageHistory->isEmpty())
-            <p class="text-sm text-slate-500">Sin movimientos registrados.</p>
-        @else
-            <ol class="relative space-y-3 border-l border-slate-200 pl-4 text-sm">
-                @foreach ($opportunity->stageHistory as $h)
-                    <li>
-                        <p class="font-medium">{{ $h->fromStage?->name ?? 'Creación' }} → {{ $h->toStage?->name ?? '—' }}</p>
-                        @if ($h->notes)<p class="text-slate-600">{{ $h->notes }}</p>@endif
-                        <p class="text-xs text-slate-400">{{ $h->changedBy?->name ?? '—' }} · {{ $h->changed_at->format('Y-m-d H:i') }}</p>
-                    </li>
-                @endforeach
-            </ol>
-        @endif
-    </x-card>
-
-    <div class="grid gap-4 lg:grid-cols-2">
-        <x-card title="Actividad reciente">
-            @if ($opportunity->activities->isEmpty())
-                <p class="text-sm text-slate-500">Sin actividad registrada.</p>
-            @else
-                <ul class="divide-y divide-slate-100 text-sm">
-                    @foreach ($opportunity->activities as $activity)
-                        <li class="py-2">
-                            <p class="font-medium">{{ $activity->subject ?? $activity->type }}</p>
-                            @if ($activity->description)<p class="text-slate-600">{{ $activity->description }}</p>@endif
-                            <p class="mt-0.5 text-xs text-slate-400">{{ $activity->type }} · {{ $activity->user?->name ?? '—' }} · {{ $activity->created_at->format('Y-m-d H:i') }}</p>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </x-card>
-
-        <x-card title="Tareas relacionadas" subtitle="Solo lectura en esta fase">
-            @if ($opportunity->tasks->isEmpty())
-                <p class="text-sm text-slate-500">Sin tareas asociadas.</p>
-            @else
-                <ul class="divide-y divide-slate-100 text-sm">
-                    @foreach ($opportunity->tasks as $task)
-                        <li class="py-2">
-                            <p class="font-medium">{{ $task->title }}</p>
-                            <p class="mt-0.5 text-xs text-slate-400">{{ $task->status }} · {{ $task->priority ?? 'sin prioridad' }} · vence {{ $task->due_at?->format('Y-m-d') ?? '—' }} · {{ $task->assignee?->name ?? 'sin asignar' }}</p>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </x-card>
-    </div>
+    @include('partials.timeline', ['subject' => $opportunity])
 @endsection

@@ -22,6 +22,8 @@
         @endforeach
         <span class="ml-auto flex gap-2 text-sm">
             @if ($canUpdate)<a href="{{ route('contacts.edit', $contact) }}" class="text-slate-700 hover:underline">Editar</a>@endif
+            @can('create', App\Models\Task::class)<a href="{{ route('tasks.create', ['related' => 'contact:'.$contact->id]) }}" class="text-slate-700 hover:underline">Nueva tarea</a>@endcan
+            @can('create', App\Models\Activity::class)<a href="{{ route('activities.create', ['related' => 'contact:'.$contact->id]) }}" class="text-slate-700 hover:underline">Registrar actividad</a>@endcan
             @can('delete', $contact)
                 <form method="POST" action="{{ route('contacts.destroy', $contact) }}" class="inline"
                     x-data @submit.prevent="if (confirm('¿Eliminar a {{ $contact->full_name }}?')) $el.submit()">
@@ -58,19 +60,5 @@
         </x-card>
     </div>
 
-    <x-card title="Actividad reciente" subtitle="Últimos registros relacionados">
-        @if ($contact->activities->isEmpty())
-            <p class="text-sm text-slate-500">Sin actividad registrada.</p>
-        @else
-            <ul class="divide-y divide-slate-100 text-sm">
-                @foreach ($contact->activities as $activity)
-                    <li class="py-2">
-                        <p class="font-medium">{{ $activity->subject ?? $activity->type }}</p>
-                        @if ($activity->description)<p class="text-slate-600">{{ $activity->description }}</p>@endif
-                        <p class="mt-0.5 text-xs text-slate-400">{{ $activity->type }} · {{ $activity->user?->name ?? '—' }} · {{ $activity->created_at->format('Y-m-d H:i') }}</p>
-                    </li>
-                @endforeach
-            </ul>
-        @endif
-    </x-card>
+    @include('partials.timeline', ['subject' => $contact])
 @endsection

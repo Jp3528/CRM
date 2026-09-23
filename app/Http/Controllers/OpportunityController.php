@@ -153,7 +153,7 @@ class OpportunityController extends Controller
             'tags:id,name,slug,color',
             'stageHistory' => fn ($q) => $q->with(['fromStage:id,name', 'toStage:id,name', 'changedBy:id,name'])->latest('changed_at'),
             'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
-            'tasks' => fn ($q) => $q->with('assignee:id,name')->latest()->limit(10),
+            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
         ]);
 
         $user = request()->user();

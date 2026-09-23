@@ -97,6 +97,7 @@ class ContactController extends Controller
             'owner:id,name,email',
             'tags:id,name,slug,color',
             'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
+            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
         ]);
 
         return view('contacts.show', [

@@ -22,6 +22,8 @@
         @endforeach
         <span class="ml-auto flex gap-2 text-sm">
             @if ($canUpdate)<a href="{{ route('companies.edit', $company) }}" class="text-slate-700 hover:underline">Editar</a>@endif
+            @can('create', App\Models\Task::class)<a href="{{ route('tasks.create', ['related' => 'company:'.$company->id]) }}" class="text-slate-700 hover:underline">Nueva tarea</a>@endcan
+            @can('create', App\Models\Activity::class)<a href="{{ route('activities.create', ['related' => 'company:'.$company->id]) }}" class="text-slate-700 hover:underline">Registrar actividad</a>@endcan
             @can('delete', $company)
                 <form method="POST" action="{{ route('companies.destroy', $company) }}" class="inline"
                     x-data @submit.prevent="if (confirm('¿Eliminar {{ $company->trade_name }}? Los contactos asociados se conservan.')) $el.submit()">
@@ -91,19 +93,5 @@
         @endif
     </x-card>
 
-    <x-card title="Actividad reciente" subtitle="Últimos registros relacionados">
-        @if ($company->activities->isEmpty())
-            <p class="text-sm text-slate-500">Sin actividad registrada.</p>
-        @else
-            <ul class="divide-y divide-slate-100 text-sm">
-                @foreach ($company->activities as $activity)
-                    <li class="py-2">
-                        <p class="font-medium">{{ $activity->subject ?? $activity->type }}</p>
-                        @if ($activity->description)<p class="text-slate-600">{{ $activity->description }}</p>@endif
-                        <p class="mt-0.5 text-xs text-slate-400">{{ $activity->type }} · {{ $activity->user?->name ?? '—' }} · {{ $activity->created_at->format('Y-m-d H:i') }}</p>
-                    </li>
-                @endforeach
-            </ul>
-        @endif
-    </x-card>
+    @include('partials.timeline', ['subject' => $company])
 @endsection

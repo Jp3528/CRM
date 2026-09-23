@@ -6,8 +6,9 @@ $navMain = [
     ['label' => 'Contactos', 'route' => 'contacts.index', 'can' => 'contacts.view', 'soon' => false],
     ['label' => 'Leads', 'route' => 'leads.index', 'can' => 'leads.view', 'soon' => false],
     ['label' => 'Oportunidades', 'route' => 'opportunities.index', 'can' => 'opportunities.view', 'soon' => false],
-    ['label' => 'Tareas', 'route' => 'tasks.index', 'can' => 'tasks.view', 'soon' => true],
-    ['label' => 'Actividades', 'route' => 'activities.index', 'can' => null, 'soon' => true],
+    ['label' => 'Tareas', 'route' => 'tasks.index', 'can' => 'tasks.view', 'soon' => false],
+    ['label' => 'Actividades', 'route' => 'activities.index', 'can' => 'activities.view', 'soon' => false],
+    ['label' => 'Calendario', 'route' => 'calendar.index', 'can_any' => ['tasks.view', 'activities.view'], 'soon' => false],
 ];
 $navAdmin = [
     ['label' => 'Usuarios', 'route' => 'admin.users.index', 'can' => 'users.view', 'soon' => false],
@@ -16,6 +17,13 @@ $navAdmin = [
     ['label' => 'Configuración', 'route' => 'settings.index', 'can' => 'users.view', 'soon' => true],
 ];
 $isActive = fn (string $route) => request()->routeIs($route) || request()->routeIs($route.'.*');
+$canSee = function (array $item) use ($user): bool {
+    if (isset($item['can_any'])) {
+        return (bool) $user && $user->hasAnyPermission($item['can_any']);
+    }
+
+    return ! ($item['can'] ?? null) || ((bool) $user && $user->hasPermission($item['can']));
+};
 @endphp
 
 {{-- Sidebar escritorio --}}
@@ -27,7 +35,7 @@ $isActive = fn (string $route) => request()->routeIs($route) || request()->route
         <p class="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">CRM</p>
         <ul class="space-y-1">
             @foreach ($navMain as $item)
-                @if (! $item['can'] || ($user && $user->hasPermission($item['can'])))
+                @if ($canSee($item))
                     <li>
                         <a href="{{ route($item['route']) }}"
                            class="flex items-center justify-between rounded-md px-3 py-2 {{ $isActive($item['route']) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
@@ -72,7 +80,7 @@ $isActive = fn (string $route) => request()->routeIs($route) || request()->route
         <nav class="flex-1 overflow-y-auto px-3 py-4 text-sm">
             <ul class="space-y-1">
                 @foreach ($navMain as $item)
-                    @if (! $item['can'] || ($user && $user->hasPermission($item['can'])))
+                    @if ($canSee($item))
                         <li>
                             <a href="{{ route($item['route']) }}"
                                class="flex items-center justify-between rounded-md px-3 py-2 {{ $isActive($item['route']) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">

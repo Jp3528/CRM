@@ -97,7 +97,7 @@ class LeadController extends Controller
             'convertedContact:id,first_name,last_name',
             'opportunities' => fn ($q) => $q->with('stage:id,name')->latest()->limit(5),
             'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
-            'tasks' => fn ($q) => $q->with('assignee:id,name')->latest()->limit(10),
+            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
         ]);
 
         $user = request()->user();

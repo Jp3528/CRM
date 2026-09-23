@@ -94,6 +94,7 @@ class CompanyController extends Controller
             'tags:id,name,slug,color',
             'contacts' => fn ($q) => $q->with('owner:id,name')->orderBy('first_name'),
             'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
+            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
         ])->loadCount('contacts');
 
         return view('companies.show', [

@@ -39,7 +39,9 @@
                 @can('contacts.view')<li><a class="text-slate-700 hover:underline" href="{{ route('contacts.index') }}">· Contactos</a></li>@endcan
                 @can('leads.view')<li><a class="text-slate-700 hover:underline" href="{{ route('leads.index') }}">· Leads</a></li>@endcan
                 @can('opportunities.view')<li><a class="text-slate-700 hover:underline" href="{{ route('opportunities.index') }}">· Oportunidades</a></li>@endcan
-                @can('tasks.view')<li><a class="text-slate-700 hover:underline" href="{{ route('tasks.index') }}">· Tareas (próximamente)</a></li>@endcan
+                @can('tasks.view')<li><a class="text-slate-700 hover:underline" href="{{ route('tasks.index') }}">· Tareas</a></li>@endcan
+                @can('activities.view')<li><a class="text-slate-700 hover:underline" href="{{ route('activities.index') }}">· Actividades</a></li>@endcan
+                @if ($canSeeTasks || $canSeeActivities)<li><a class="text-slate-700 hover:underline" href="{{ route('calendar.index') }}">· Calendario</a></li>@endif
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan
                 <li><a class="text-slate-700 hover:underline" href="{{ route('profile.edit') }}">· Mi perfil</a></li>
             </ul>
@@ -54,4 +56,60 @@
             </ul>
         </x-card>
     </div>
+
+    @if ($canSeeTasks || $canSeeActivities)
+        <div class="grid gap-4 md:grid-cols-2">
+            @if ($canSeeTasks)
+                <x-card title="Mis tareas de hoy ({{ $tasksToday->count() }})" subtitle="Vencen hoy y siguen abiertas">
+                    @if ($tasksToday->isEmpty())
+                        <p class="text-sm text-slate-500">Nada vence hoy. <a href="{{ route('tasks.index') }}" class="hover:underline">Ver tareas</a></p>
+                    @else
+                        <ul class="space-y-2 text-sm">
+                            @foreach ($tasksToday as $task)
+                                <li><a href="{{ route('tasks.show', $task) }}" class="hover:underline">{{ $task->title }}</a>
+                                    <span class="text-xs text-slate-400">· {{ $task->related_label }} · {{ $task->due_at?->format('H:i') ?? '' }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-card>
+                <x-card title="Vencidas ({{ $overdueTasks->count() }}) + Próximas ({{ $upcomingTasks->count() }})" subtitle="Seguimiento personal">
+                    @if ($overdueTasks->isNotEmpty())
+                        <p class="mb-1 text-xs font-semibold uppercase text-red-600">Vencidas</p>
+                        <ul class="mb-3 space-y-1 text-sm">
+                            @foreach ($overdueTasks as $task)
+                                <li><a href="{{ route('tasks.show', $task) }}" class="hover:underline">{{ $task->title }}</a>
+                                    <span class="text-xs text-slate-400">· venció {{ $task->due_at?->format('Y-m-d') }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    @if ($upcomingTasks->isNotEmpty())
+                        <p class="mb-1 text-xs font-semibold uppercase text-slate-500">Próximos 7 días</p>
+                        <ul class="space-y-1 text-sm">
+                            @foreach ($upcomingTasks as $task)
+                                <li><a href="{{ route('tasks.show', $task) }}" class="hover:underline">{{ $task->title }}</a>
+                                    <span class="text-xs text-slate-400">· {{ $task->due_at?->format('Y-m-d') }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    @if ($overdueTasks->isEmpty() && $upcomingTasks->isEmpty())
+                        <p class="text-sm text-slate-500">Sin pendientes próximos.</p>
+                    @endif
+                </x-card>
+            @endif
+            @if ($canSeeActivities)
+                <x-card title="Próximas reuniones ({{ $upcomingMeetings->count() }})" subtitle="Programadas los próximos 7 días">
+                    @if ($upcomingMeetings->isEmpty())
+                        <p class="text-sm text-slate-500">Sin reuniones programadas.</p>
+                    @else
+                        <ul class="space-y-2 text-sm">
+                            @foreach ($upcomingMeetings as $meeting)
+                                <li><a href="{{ route('activities.show', $meeting) }}" class="hover:underline">{{ $meeting->subject ?? 'Reunión' }}</a>
+                                    <span class="text-xs text-slate-400">· {{ $meeting->scheduled_at?->format('Y-m-d H:i') }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-card>
+            @endif
+        </div>
+    @endif
 @endsection

@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 5: Oportunidades + pipeline + Kanban.
+CRM empresarial web construido con Laravel. Fase 6: Tareas + actividades + calendario.
 
 ## Stack
 
@@ -209,6 +209,42 @@ para no multiplicar la matriz; Superadministrador intacto). Sin migraciones nuev
   `opportunities.tags.detach` bajo `auth`+`active`. Sidebar Oportunidades activo;
   dashboard con acceso directo.
 
+## Fase 6 — Tareas + actividades + calendario comercial
+
+CRUD con `TaskPolicy` y `ActivityPolicy` (patrón de fases previas). Sin migraciones:
+el esquema Fase 1 ya traía todo (`taskable`/`subjectable` polimórficos, `scheduled_at`
+en activities, SoftDeletes). Permisos `tasks.*` ya existían; `activities.view/create/
+update/delete` añadidos idempotentes en `PermissionSeeder::EXTRA`.
+
+- Tareas: `title, description, status (pending/in_progress/completed/cancelled),
+  priority (low/medium/high/urgent), due_at, completed_at, assigned_to, created_by
+  (= Auth::id(), sin campo en formulario), taskable`. Búsqueda (título/descripción),
+  filtros (estado, prioridad, asignado, tipo entidad incl. sin-entidad, presets
+  hoy/vencidas/próximas/completadas), whitelist (`title, due_at, priority, status,
+  created_at`; prioridad con orden semántico vía CASE portable), paginación 15.
+- Invariantes: completar (`pending/in_progress → completed + now`), reabrir
+  (`completed/cancelled → pending + null`), cancelar (≠completada, `completed_at`
+  siempre null); edición general normaliza igual. `is_overdue` calculado
+  (`due_at < now` y no cerrada/cancelada), sin columna redundante.
+- Actividades manuales: `call/email/note` + `meeting` (exige `scheduled_at`);
+  `status_change` reservado al sistema (rechazado en creación, 403/redirección en
+  edición/eliminación). `user_id = Auth::id()`; `completed_at` sincronizado con status.
+- Relaciones polimórficas con whitelist `RelatedEntity` (`company/contact/lead/
+  opportunity`): el frontend envía claves, el backend mapea a modelos; clases
+  arbitrarias rechazadas (test). Etiquetas legibles + URL vía accessors
+  (`related_label`, `related_url`).
+- Creación contextual (`?related=company:3`) desde las 4 fichas, validada backend.
+- Timeline unificado (`partials/timeline`) en fichas: actividades + tareas (+ historial
+  de etapas en oportunidades), reciente primero.
+- Calendario server-rendered sin librerías (decisión: dataset pequeño, bundle intacto):
+  vistas mes/semana/día (`?view=&date=`), semanas lunes–domingo, eventos = tareas con
+  `due_at` + reuniones con `scheduled_at` (nunca `created_at` como programada),
+  distinción visual tarea/reunión, enlaces a fichas, crear tarea/reunión, responsive
+  con scroll horizontal. Permiso: `tasks.view` o `activities.view` (cada uno ve lo suyo).
+- Timezone: configuración existente (`UTC`), sin cambios; fechas coherentes con `now()`.
+- Dashboard moderado: mis tareas de hoy, vencidas, próximos 7 días y próximas reuniones
+  (conteos + top 5 con enlaces), sin analítica comercial.
+
 ## Tests
 
 ```sh
@@ -238,15 +274,22 @@ sincronización+actividad, no-op sin historial, etapa ajena rechazada, Ganada/Pe
 (requiere motivo) con sincronización, reaperturas, atomicidad ante fallo, endpoint JSON,
 Kanban (columnas/totales/tarjetas), compatibilidad con conversión Fase 4.
 
++ Fase 6 (`tests/Feature/PhaseSixTest`, 30 tests): CRUD tareas/actividades, 403
+(10/7 ops), validación, rechazo de morph arbitrario, preselección contextual,
+complete/reopen/cancel con invariantes, overdue, búsqueda/filtros/sorting/paginación,
+tipo sistema rechazado en creación y protegido en edición/eliminación, reunión exige
+`scheduled_at`, labels polimórficos ×4 entidades, timeline en ficha, calendario
+(permiso/eventos/semana/día/alcance), widgets de dashboard.
+
 ## Frontend
 
 ```sh
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 5)
+## Alcance actual (Fase 6)
 
-Oportunidades + pipeline Ventas + Kanban funcionan completamente. Leads, Empresas y
-Contactos continúan activos. Todavía NO hay: tareas globales, productos, cotizaciones,
-ventas, tickets, campañas, automatizaciones, reportes ejecutivos, forecast completo,
-API ni integraciones.
+Tareas + actividades + calendario funcionan. Oportunidades/Kanban, Leads, Empresas y
+Contactos continúan activos. Todavía NO hay: notificaciones, recordatorios por email,
+Google/Outlook Calendar, automatizaciones, productos, cotizaciones, ventas, tickets,
+campañas, reportes avanzados, forecast, API ni integraciones.

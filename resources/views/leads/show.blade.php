@@ -43,6 +43,8 @@
             @if ($canConvert)
                 <a href="{{ route('leads.convert', $lead) }}" class="font-medium text-slate-900 hover:underline">Convertir →</a>
             @endif
+            @can('create', App\Models\Task::class)<a href="{{ route('tasks.create', ['related' => 'lead:'.$lead->id]) }}" class="text-slate-700 hover:underline">Nueva tarea</a>@endcan
+            @can('create', App\Models\Activity::class)<a href="{{ route('activities.create', ['related' => 'lead:'.$lead->id]) }}" class="text-slate-700 hover:underline">Registrar actividad</a>@endcan
             @can('delete', $lead)
                 <form method="POST" action="{{ route('leads.destroy', $lead) }}" class="inline"
                     x-data @submit.prevent="if (confirm('¿Eliminar a {{ $lead->full_name }}?')) $el.submit()">
@@ -99,40 +101,5 @@
         </x-card>
     @endif
 
-    <div class="grid gap-4 lg:grid-cols-2">
-        <x-card title="Actividad reciente" subtitle="Últimos registros relacionados">
-            @if ($lead->activities->isEmpty())
-                <p class="text-sm text-slate-500">Sin actividad registrada.</p>
-            @else
-                <ul class="divide-y divide-slate-100 text-sm">
-                    @foreach ($lead->activities as $activity)
-                        <li class="py-2">
-                            <p class="font-medium">{{ $activity->subject ?? $activity->type }}</p>
-                            @if ($activity->description)<p class="text-slate-600">{{ $activity->description }}</p>@endif
-                            <p class="mt-0.5 text-xs text-slate-400">{{ $activity->type }} · {{ $activity->user?->name ?? '—' }} · {{ $activity->created_at->format('Y-m-d H:i') }}</p>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </x-card>
-
-        <x-card title="Tareas relacionadas" subtitle="Solo lectura en esta fase">
-            @if ($lead->tasks->isEmpty())
-                <p class="text-sm text-slate-500">Sin tareas asociadas.</p>
-            @else
-                <ul class="divide-y divide-slate-100 text-sm">
-                    @foreach ($lead->tasks as $task)
-                        <li class="py-2">
-                            <p class="font-medium">{{ $task->title }}</p>
-                            <p class="mt-0.5 text-xs text-slate-400">
-                                {{ $task->status }} · {{ $task->priority ?? 'sin prioridad' }}
-                                · vence {{ $task->due_at?->format('Y-m-d') ?? '—' }}
-                                · {{ $task->assignee?->name ?? 'sin asignar' }}
-                            </p>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </x-card>
-    </div>
+    @include('partials.timeline', ['subject' => $lead])
 @endsection
