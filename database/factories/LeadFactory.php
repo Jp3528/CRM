@@ -19,7 +19,7 @@ class LeadFactory extends Factory
             'company_name' => fake()->company(),
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->phoneNumber(),
-            'source' => fake()->randomElement(['web', 'referral', 'event', 'cold_call', 'social']),
+            'source' => fake()->randomElement(['website', 'referral', 'campaign', 'social', 'email', 'phone', 'event', 'other']),
             'status' => 'new',
             'score' => fake()->numberBetween(0, 100),
             'owner_id' => User::factory(),

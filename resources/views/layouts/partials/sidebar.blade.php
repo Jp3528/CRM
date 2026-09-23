@@ -4,7 +4,7 @@ $navMain = [
     ['label' => 'Dashboard', 'route' => 'dashboard', 'can' => null, 'soon' => false],
     ['label' => 'Empresas', 'route' => 'companies.index', 'can' => 'companies.view', 'soon' => false],
     ['label' => 'Contactos', 'route' => 'contacts.index', 'can' => 'contacts.view', 'soon' => false],
-    ['label' => 'Leads', 'route' => 'leads.index', 'can' => 'leads.view', 'soon' => true],
+    ['label' => 'Leads', 'route' => 'leads.index', 'can' => 'leads.view', 'soon' => false],
     ['label' => 'Oportunidades', 'route' => 'opportunities.index', 'can' => 'opportunities.view', 'soon' => true],
     ['label' => 'Tareas', 'route' => 'tasks.index', 'can' => 'tasks.view', 'soon' => true],
     ['label' => 'Actividades', 'route' => 'activities.index', 'can' => null, 'soon' => true],

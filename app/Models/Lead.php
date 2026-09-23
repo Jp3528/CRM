@@ -22,6 +22,15 @@ class Lead extends Model
         'converted_at', 'converted_contact_id', 'converted_company_id',
     ];
 
+    public const STATUSES = ['new', 'contacted', 'qualified', 'unqualified', 'converted'];
+
+    /** Estados asignables manualmente (converted solo vía flujo de conversión). */
+    public const EDITABLE_STATUSES = ['new', 'contacted', 'qualified', 'unqualified'];
+
+    public const SOURCES = ['website', 'referral', 'campaign', 'social', 'email', 'phone', 'event', 'other'];
+
+    public const SORTABLE = ['first_name', 'status', 'score', 'estimated_value', 'created_at'];
+
     protected function casts(): array
     {
         return [
@@ -70,5 +79,91 @@ class Lead extends Model
     public function tasks(): MorphMany
     {
         return $this->morphMany(Task::class, 'taskable');
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim("{$this->first_name} {$this->last_name}");
+    }
+
+    public function isConverted(): bool
+    {
+        return $this->status === 'converted' || $this->converted_at !== null;
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    public function scopeSearch($query, ?string $term)
+    {
+        if (blank($term)) {
+            return $query;
+        }
+
+        $term = mb_strtolower(trim($term));
+
+        return $query->where(function ($q) use ($term) {
+            $q->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(company_name) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(email) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(phone) LIKE ?', ["%{$term}%"]);
+        });
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    public function scopeStatus($query, ?string $status)
+    {
+        if (blank($status)) {
+            return $query;
+        }
+
+        return $query->where('leads.status', $status);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    public function scopeSource($query, ?string $source)
+    {
+        if (blank($source)) {
+            return $query;
+        }
+
+        return $query->where('leads.source', $source);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    public function scopeOwnedBy($query, mixed $ownerId)
+    {
+        if (blank($ownerId)) {
+            return $query;
+        }
+
+        return $query->where('leads.owner_id', $ownerId);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    public function scopeScoreBetween($query, mixed $min, mixed $max)
+    {
+        if (! blank($min)) {
+            $query->where('leads.score', '>=', (int) $min);
+        }
+
+        if (! blank($max)) {
+            $query->where('leads.score', '<=', (int) $max);
+        }
+
+        return $query;
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    public function scopeConverted($query, ?string $value)
+    {
+        if ($value === 'yes') {
+            return $query->whereNotNull('leads.converted_at');
+        }
+
+        if ($value === 'no') {
+            return $query->whereNull('leads.converted_at');
+        }
+
+        return $query;
     }
 }

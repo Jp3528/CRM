@@ -6,16 +6,14 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LeadController;
+use App\Http\Controllers\LeadConversionController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| NexusCRM Fase 3 — Empresas y Contactos (primer módulo funcional)
-|--------------------------------------------------------------------------
-| guest        : login + recuperación (mailer log/array)
-| auth+active  : dashboard, perfil, companies.*, contacts.* (Policies),
-|                placeholders futuros, admin users.view
+| NexusCRM Fase 4 — Leads + conversión (auth+active, Policies por módulo)
 */
 
 // Landing pública mínima (conserva GET / 200 de Fase 1).
@@ -65,9 +63,19 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::delete('contacts/{contact}/tags/{tag}', [ContactController::class, 'detachTag'])
         ->name('contacts.tags.detach');
 
+    // Leads + calificación + conversión transaccional (Fase 4).
+    Route::resource('leads', LeadController::class);
+    Route::delete('leads/{lead}/tags/{tag}', [LeadController::class, 'detachTag'])
+        ->name('leads.tags.detach');
+    Route::patch('leads/{lead}/qualify', [LeadController::class, 'qualify'])
+        ->name('leads.qualify');
+    Route::get('leads/{lead}/convert', [LeadConversionController::class, 'create'])
+        ->name('leads.convert');
+    Route::post('leads/{lead}/convert', [LeadConversionController::class, 'store'])
+        ->name('leads.convert.store');
+
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([
-        'leads' => 'Leads',
         'opportunities' => 'Oportunidades',
         'tasks' => 'Tareas',
         'activities' => 'Actividades',

@@ -6,6 +6,12 @@ $map = [
     'inactive' => ['slate', 'Inactivo'],
     'pending' => ['yellow', 'Pendiente'],
     'completed' => ['blue', 'Completada'],
+    'new' => ['blue', 'Nuevo'],
+    'contacted' => ['yellow', 'Contactado'],
+    'qualified' => ['green', 'Calificado'],
+    'unqualified' => ['slate', 'No calificado'],
+    'converted' => ['blue', 'Convertido'],
+    'open' => ['green', 'Abierta'],
 ];
 [$color, $label] = $map[$status] ?? ['slate', ucfirst($status)];
 @endphp

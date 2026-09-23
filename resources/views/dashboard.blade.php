@@ -35,9 +35,9 @@
         <x-card title="Accesos rápidos" subtitle="Solo lo que tus permisos permiten">
             <ul class="space-y-2 text-sm">
                 <li><a class="text-slate-700 hover:underline" href="{{ route('dashboard') }}">· Dashboard</a></li>
-                @can('companies.view')<li><a class="text-slate-700 hover:underline" href="{{ route('companies.index') }}">· Empresas (próximamente)</a></li>@endcan
-                @can('contacts.view')<li><a class="text-slate-700 hover:underline" href="{{ route('contacts.index') }}">· Contactos (próximamente)</a></li>@endcan
-                @can('leads.view')<li><a class="text-slate-700 hover:underline" href="{{ route('leads.index') }}">· Leads (próximamente)</a></li>@endcan
+                @can('companies.view')<li><a class="text-slate-700 hover:underline" href="{{ route('companies.index') }}">· Empresas</a></li>@endcan
+                @can('contacts.view')<li><a class="text-slate-700 hover:underline" href="{{ route('contacts.index') }}">· Contactos</a></li>@endcan
+                @can('leads.view')<li><a class="text-slate-700 hover:underline" href="{{ route('leads.index') }}">· Leads</a></li>@endcan
                 @can('opportunities.view')<li><a class="text-slate-700 hover:underline" href="{{ route('opportunities.index') }}">· Oportunidades (próximamente)</a></li>@endcan
                 @can('tasks.view')<li><a class="text-slate-700 hover:underline" href="{{ route('tasks.index') }}">· Tareas (próximamente)</a></li>@endcan
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan

@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 3: Empresas + Contactos (primer módulo funcional).
+CRM empresarial web construido con Laravel. Fase 4: Leads + calificación + conversión.
 
 ## Stack
 
@@ -123,6 +123,50 @@ Superadministrador con acceso total vía RBAC centralizado):
 - Componentes nuevos: `empty-state`, `status-badge` (reutiliza Fase 2: card, button, badge, flash, breadcrumbs).
 - Flash: "Empresa/Contacto creada(o)/actualizada(o)/eliminada(o) correctamente." Errores 403/404/422 estándar.
 
+## Fase 4 — Leads + calificación + conversión
+
+CRUD con `LeadPolicy` (viewAny/view/create/update/delete + `convert` → permiso
+`leads.convert`, añadido idempotente en `PermissionSeeder::EXTRA`; Superadministrador
+cubierto por el sync total):
+
+- Esquema real sin migraciones nuevas: `first_name, last_name, company_name, email,
+  phone, source, status (default new), score (0–100 manual), owner_id,
+  estimated_value decimal(15,2) >= 0, notes, converted_at, converted_contact_id,
+  converted_company_id`. Sin `converted_opportunity_id` en esquema: la oportunidad
+  se traza vía `lead_id` (`$lead->opportunities()`).
+- Estados centralizados `Lead::STATUSES = new, contacted, qualified, unqualified,
+  converted`; edición manual limitada a `EDITABLE_STATUSES` (converted solo vía flujo).
+- Orígenes `Lead::SOURCES = website, referral, campaign, social, email, phone, event, other`
+  (factory Fase 1 actualizada desde `web/cold_call` legacy); filtro por source.
+- Listado: nombre, empresa declarada, email/teléfono, origen, estado, score (barra visual),
+  valor estimado (number_format neutral), responsable, insignia Convertido, creada, acciones.
+  Búsqueda backend (`scopeSearch`: nombres, empresa, email, teléfono), filtros combinables
+  (estado, origen, responsable, score mín/máx, convertido sí/no), sorting con whitelist
+  (`first_name, status, score, estimated_value, created_at`), paginación 15 con query string.
+- Crear/editar con `Store/UpdateLeadRequest`; sin unique arbitrario de email;
+  convertidos no editables (403 en update, redirect con error en edit).
+- Soft delete con confirmación; permitido aun convertido (no arrastra nada).
+- Ficha: datos, calificación/valor, tags, oportunidades backend (texto, sin enlaces rotos),
+  actividad reciente, tareas relacionadas (título/estado/prioridad/vencimiento/asignado,
+  solo lectura), fechas.
+- Calificación: botón "Marcar calificado" (`PATCH leads/{lead}/qualify`, solo new/contacted)
+  + cambio de estado en edición. Conversión exige `qualified` (decisión documentada:
+  garantiza el paso por calificación antes de crear registros definitivos).
+- Conversión (`LeadConversionController` + `LeadConversionService::convert`):
+  pantalla con empresa nueva/existente, contacto nuevo/existente (bloquea contacto de
+  otra empresa; vincula si no tiene), oportunidad opcional (nombre/monto revisable desde
+  `estimated_value`/fecha; pipeline Ventas + etapa Prospecto por nombre/posición, sin IDs
+  hardcodeados), responsable (default: dueño del lead). Mapeo cuidadoso: `company_name →
+  trade_name`; email/teléfono del lead van al Contacto, nunca como email corporativo;
+  sin job_title/department/mobile inventados.
+- Atómica con `DB::transaction` + `lockForUpdate`: empresa → contacto → oportunidad →
+  lead (`converted`, `converted_at`, refs) → actividad `status_change`. Fallos revierten
+  todo (verificado: empresa creada se revierte si el contacto es incoherente).
+  Reconversión bloqueada en UI (sin botón) y backend (redirect con error, sin duplicados).
+- Tags con `SyncsTags`; owner con select de activos. Rutas `leads.*`, `leads.convert`,
+  `leads.convert.store`, `leads.qualify`, `leads.tags.detach` bajo `auth`+`active`.
+  Sidebar Leads activo; dashboard con accesos a Empresas/Contactos/Leads.
+
 ## Tests
 
 ```sh
@@ -137,6 +181,12 @@ perfil requiere auth, inactivo bloqueado, sin registro público, reset renderiza
 403 sin permiso (7 operaciones c/u), soft delete (contactos de empresa intactos),
 búsqueda (incl. por empresa), filtros combinados, paginación 15, relación
 empresa↔contactos, tags asignar/crear/quitar, actividad visible.
++ Fase 4 (`tests/Feature/PhaseFourTest`, 26 tests): CRUD leads, validación, 403,
+soft delete, búsqueda, filtros (estado/origen/responsable/score/convertido),
+sorting por score, paginación 15, tags, calificación, conversión a Company+Contact
+(nueva o existente), oportunidad opcional en Ventas/Prospecto con amount revisable,
+trazabilidad converted_*, reconversión bloqueada, conversión exige qualified,
+403 sin leads.convert, rollback total ante fallo, actividad de conversión.
 
 ## Frontend
 
@@ -144,8 +194,10 @@ empresa↔contactos, tags asignar/crear/quitar, actividad visible.
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 3)
+## Alcance actual (Fase 4)
 
-Empresas + Contactos funcionan completamente. Todavía NO hay: Leads funcional,
-Oportunidades, Kanban, tareas completas, productos, cotizaciones, ventas, tickets,
-campañas, automatizaciones, reportes, API ni integraciones.
+Leads funciona completamente (CRUD + calificación + conversión transaccional).
+Empresas y Contactos continúan activos. La oportunidad creada en conversión existe
+solo como dato backend; su interfaz completa llega en Fase 5. Todavía NO hay:
+Kanban, tareas globales, productos, cotizaciones, ventas, tickets, campañas,
+automatizaciones, reportes, API ni integraciones.

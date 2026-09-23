@@ -13,6 +13,11 @@ class PermissionSeeder extends Seeder
 
     public const ACTIONS = ['view', 'create', 'update', 'delete'];
 
+    /** Permisos adicionales fuera de la matriz módulo×acción (idempotentes). */
+    public const EXTRA = [
+        ['name' => 'leads.convert', 'label' => 'Convert Leads', 'description' => 'Permite convertir leads en empresa/contacto (y oportunidad opcional).', 'group' => 'leads'],
+    ];
+
     public function run(): void
     {
         foreach (self::GROUPS as $group) {
@@ -26,6 +31,17 @@ class PermissionSeeder extends Seeder
                     ]
                 );
             }
+        }
+
+        foreach (self::EXTRA as $extra) {
+            Permission::firstOrCreate(
+                ['name' => $extra['name']],
+                [
+                    'label' => $extra['label'],
+                    'description' => $extra['description'],
+                    'group' => $extra['group'],
+                ]
+            );
         }
 
         $super = Role::where('name', 'Superadministrador')->first();
