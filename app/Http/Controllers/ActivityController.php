@@ -73,7 +73,7 @@ class ActivityController extends Controller
 
         return view('activities.create', [
             'types' => Activity::MANUAL_TYPES,
-            'preselected' => $this->parseRelated($request->query('related')),
+            'preselected' => $this->parseRelated($request->user(), $request->query('related')),
             'preselectedType' => in_array($request->query('type'), Activity::MANUAL_TYPES, true)
                 ? $request->query('type')
                 : null,
@@ -186,7 +186,7 @@ class ActivityController extends Controller
     /**
      * @return array{type: ?string, id: ?int, label: ?string}
      */
-    private function parseRelated(?string $raw): array
+    private function parseRelated(User $actor, ?string $raw): array
     {
         if (! $raw || ! str_contains($raw, ':')) {
             return ['type' => null, 'id' => null, 'label' => null];
@@ -200,6 +200,10 @@ class ActivityController extends Controller
         }
 
         $model = $class::find($id);
+
+        if (! DataScope::canViewModel($actor, $model)) {
+            return ['type' => null, 'id' => null, 'label' => null];
+        }
 
         return [
             'type' => $model ? $type : null,

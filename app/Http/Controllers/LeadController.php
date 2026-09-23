@@ -82,6 +82,8 @@ class LeadController extends Controller
     public function store(StoreLeadRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $data['owner_id'] = DataScope::normalizeOwnerId($request->user(), $data['owner_id'] ?? null);
+        DataScope::assertCanAssignUser($request->user(), $data['owner_id'] ?? null);
 
         $lead = Lead::create(collect($data)->except(['tags', 'new_tags'])->all());
         $this->syncTags($lead, $data['tags'] ?? [], $data['new_tags'] ?? null);
@@ -99,8 +101,8 @@ class LeadController extends Controller
         $lead->load([
             'owner:id,name,email',
             'tags:id,name,slug,color',
-            'convertedCompany:id,trade_name',
-            'convertedContact:id,first_name,last_name',
+            'convertedCompany:id,trade_name,owner_id',
+            'convertedContact:id,first_name,last_name,company_id,owner_id',
             'opportunities' => fn ($q) => $q->visibleTo($user)->with('stage:id,name')->latest()->limit(5),
             'activities' => fn ($q) => $q->visibleTo($user)->with('user:id,name')->latest()->limit(10),
             'tasks' => fn ($q) => $q->visibleTo($user)->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
@@ -135,6 +137,8 @@ class LeadController extends Controller
     public function update(UpdateLeadRequest $request, Lead $lead): RedirectResponse
     {
         $data = $request->validated();
+        $data['owner_id'] = DataScope::normalizeOwnerId($request->user(), $data['owner_id'] ?? null, $lead->owner_id);
+        DataScope::assertCanAssignUser($request->user(), $data['owner_id'] ?? null, $lead->owner_id);
 
         $lead->update(collect($data)->except(['tags', 'new_tags'])->all());
         $this->syncTags($lead, $data['tags'] ?? [], $data['new_tags'] ?? null);

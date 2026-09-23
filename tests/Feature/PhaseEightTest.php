@@ -495,7 +495,7 @@ class PhaseEightTest extends TestCase
     public function test_invoice_transitions_and_overdue(): void
     {
         $user = $this->invoiceAccess();
-        $invoice = Invoice::factory()->create(['status' => 'draft']);
+        $invoice = Invoice::factory()->create(['status' => 'draft', 'owner_id' => $user->id]);
 
         $this->actingAs($user)->patch("/invoices/{$invoice->id}/send")->assertRedirect();
         $this->assertSame('sent', $invoice->fresh()->status);
@@ -511,13 +511,13 @@ class PhaseEightTest extends TestCase
         $this->assertSame('paid', $invoice->fresh()->status);
 
         // overdue efectivo por fecha.
-        $overdue = Invoice::factory()->create(['status' => 'sent', 'due_date' => now()->subDay()->format('Y-m-d')]);
+        $overdue = Invoice::factory()->create(['status' => 'sent', 'due_date' => now()->subDay()->format('Y-m-d'), 'owner_id' => $user->id]);
         $this->assertTrue($overdue->is_overdue);
-        $paid = Invoice::factory()->create(['status' => 'paid', 'due_date' => now()->subDay()->format('Y-m-d')]);
+        $paid = Invoice::factory()->create(['status' => 'paid', 'due_date' => now()->subDay()->format('Y-m-d'), 'owner_id' => $user->id]);
         $this->assertFalse($paid->is_overdue);
 
         // draft/sent → cancelled.
-        $draft = Invoice::factory()->create(['status' => 'draft']);
+        $draft = Invoice::factory()->create(['status' => 'draft', 'owner_id' => $user->id]);
         $this->actingAs($user)->patch("/invoices/{$draft->id}/cancel")->assertRedirect();
         $this->assertSame('cancelled', $draft->fresh()->status);
     }
@@ -525,7 +525,7 @@ class PhaseEightTest extends TestCase
     public function test_invoice_soft_delete_and_print(): void
     {
         $user = $this->invoiceAccess();
-        $invoice = Invoice::factory()->create();
+        $invoice = Invoice::factory()->create(['owner_id' => $user->id]);
         \App\Models\InvoiceItem::factory()->create(['invoice_id' => $invoice->id]);
 
         $this->actingAs($user)->get("/invoices/{$invoice->id}/print")

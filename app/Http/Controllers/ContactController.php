@@ -42,7 +42,10 @@ class ContactController extends Controller
 
         $contacts = Contact::query()
             ->visibleTo($user)
-            ->with(['company:id,trade_name', 'owner:id,name', 'tags:id,name,slug,color'])
+            ->with([
+                'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+                'owner:id,name', 'tags:id,name,slug,color',
+            ])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
             ->forCompany($validated['company_id'] ?? null)
@@ -64,8 +67,8 @@ class ContactController extends Controller
                 'direction' => $direction,
             ],
             'statuses' => Contact::STATUSES,
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
-            'departments' => Contact::query()->select('department')->distinct()
+            'companies' => Company::visibleTo($user)->orderBy('trade_name')->get(['id', 'trade_name']),
+            'departments' => Contact::visibleTo($user)->select('department')->distinct()
                 ->whereNotNull('department')->orderBy('department')->pluck('department'),
             'owners' => DataScope::filterableUsers($user),
         ]);
@@ -74,16 +77,23 @@ class ContactController extends Controller
     public function create(Request $request): View
     {
         $this->authorize('create', Contact::class);
+        $preselectedCompanyId = $request->integer('company_id') ?: null;
+        if (! DataScope::isVisibleId($request->user(), Company::class, $preselectedCompanyId)) {
+            $preselectedCompanyId = null;
+        }
 
         return view('contacts.create', array_merge(
             $this->formData(null),
-            ['preselectedCompanyId' => $request->integer('company_id') ?: null]
+            ['preselectedCompanyId' => $preselectedCompanyId]
         ));
     }
 
     public function store(StoreContactRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $data['owner_id'] = DataScope::normalizeOwnerId($request->user(), $data['owner_id'] ?? null);
+        DataScope::assertVisibleId($request->user(), Company::class, $data['company_id'] ?? null);
+        DataScope::assertCanAssignUser($request->user(), $data['owner_id'] ?? null);
 
         $contact = Contact::create(collect($data)->except(['tags', 'new_tags'])->all());
         $this->syncTags($contact, $data['tags'] ?? [], $data['new_tags'] ?? null);
@@ -99,7 +109,7 @@ class ContactController extends Controller
         $viewer = request()->user();
 
         $contact->load([
-            'company:id,trade_name,legal_name',
+            'company:id,trade_name,legal_name,owner_id',
             'owner:id,name,email',
             'tags:id,name,slug,color',
             'activities' => fn ($q) => $q->visibleTo($viewer)->with('user:id,name')->latest()->limit(10),
@@ -134,6 +144,9 @@ class ContactController extends Controller
     public function update(UpdateContactRequest $request, Contact $contact): RedirectResponse
     {
         $data = $request->validated();
+        $data['owner_id'] = DataScope::normalizeOwnerId($request->user(), $data['owner_id'] ?? null, $contact->owner_id);
+        DataScope::assertVisibleId($request->user(), Company::class, $data['company_id'] ?? null);
+        DataScope::assertCanAssignUser($request->user(), $data['owner_id'] ?? null, $contact->owner_id);
 
         $contact->update(collect($data)->except(['tags', 'new_tags'])->all());
         $this->syncTags($contact, $data['tags'] ?? [], $data['new_tags'] ?? null);
@@ -168,7 +181,7 @@ class ContactController extends Controller
     {
         return [
             'owners' => DataScope::filterableUsers(auth()->user(), $contact?->owner_id),
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
+            'companies' => Company::visibleTo(auth()->user())->orderBy('trade_name')->get(['id', 'trade_name']),
             'allTags' => Tag::orderBy('name')->get(['id', 'name']),
             'statuses' => Contact::STATUSES,
         ];

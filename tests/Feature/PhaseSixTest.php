@@ -170,7 +170,6 @@ class PhaseSixTest extends TestCase
     public function test_show_and_update_task(): void
     {
         $user = $this->taskAccess();
-        $other = User::factory()->create(['status' => 'active']);
         $task = $this->makeTask($user, ['title' => 'Visible Una']);
 
         $this->actingAs($user)->get("/tasks/{$task->id}")->assertOk()->assertSee('Visible Una');
@@ -178,14 +177,14 @@ class PhaseSixTest extends TestCase
         $response = $this->actingAs($user)->put("/tasks/{$task->id}", $this->taskPayload([
             'title' => 'Actualizada Una',
             'status' => 'in_progress',
-            'assigned_to' => $other->id,
+            'assigned_to' => null,
         ]));
 
         $response->assertRedirect(route('tasks.show', $task));
         $task = $task->fresh();
         $this->assertSame('Actualizada Una', $task->title);
         $this->assertSame('in_progress', $task->status);
-        $this->assertSame($other->id, $task->assigned_to);
+        $this->assertNull($task->assigned_to);
     }
 
     public function test_delete_task_soft_deletes(): void

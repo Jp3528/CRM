@@ -8,6 +8,7 @@ use App\Models\Lead;
 use App\Models\Opportunity;
 use App\Models\Pipeline;
 use App\Models\User;
+use App\Support\DataScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -50,9 +51,11 @@ class LeadConversionService
             }
 
             $ownerId = $data['owner_id'] ?? $lead->owner_id;
+            DataScope::assertCanAssignUser($actor, $ownerId, $lead->owner_id);
 
             // ---- Empresa (se crea antes de validar el contacto: la transacción revierte si algo falla después).
             if (($data['company_mode'] ?? 'new') === 'existing') {
+                DataScope::assertVisibleId($actor, Company::class, $data['company_id'] ?? null);
                 $company = Company::findOrFail($data['company_id']);
             } else {
                 $company = Company::create([
@@ -64,6 +67,7 @@ class LeadConversionService
 
             // ---- Contacto.
             if (($data['contact_mode'] ?? 'new') === 'existing') {
+                DataScope::assertVisibleId($actor, Contact::class, $data['contact_id'] ?? null);
                 $contact = Contact::findOrFail($data['contact_id']);
 
                 if ($contact->company_id !== null && $contact->company_id !== $company->id) {

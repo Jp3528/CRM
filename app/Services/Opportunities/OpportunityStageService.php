@@ -6,6 +6,7 @@ use App\Models\Contact;
 use App\Models\Opportunity;
 use App\Models\PipelineStage;
 use App\Models\User;
+use App\Support\DataScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -21,6 +22,12 @@ class OpportunityStageService
     public function create(array $data, User $actor): Opportunity
     {
         return DB::transaction(function () use ($data, $actor) {
+            $data['owner_id'] = DataScope::normalizeOwnerId($actor, $data['owner_id'] ?? null);
+            DataScope::assertVisibleId($actor, \App\Models\Company::class, $data['company_id'] ?? null);
+            DataScope::assertVisibleId($actor, Contact::class, $data['contact_id'] ?? null);
+            DataScope::assertVisibleId($actor, \App\Models\Lead::class, $data['lead_id'] ?? null);
+            DataScope::assertCanAssignUser($actor, $data['owner_id'] ?? null);
+
             $stage = PipelineStage::findOrFail($data['pipeline_stage_id']);
 
             if ($stage->pipeline_id !== (int) $data['pipeline_id']) {

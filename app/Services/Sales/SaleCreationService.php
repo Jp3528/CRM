@@ -2,12 +2,14 @@
 
 namespace App\Services\Sales;
 
+use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Opportunity;
 use App\Models\Product;
 use App\Models\Quote;
 use App\Models\Sale;
 use App\Models\User;
+use App\Support\DataScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +29,7 @@ class SaleCreationService
     {
         return DB::transaction(function () use ($quote, $actor, $data) {
             $quote = Quote::whereKey($quote->id)->lockForUpdate()->firstOrFail();
+            abort_unless(DataScope::canViewModel($actor, $quote), 403);
 
             if ($quote->trashed()) {
                 throw ValidationException::withMessages([
@@ -45,6 +48,7 @@ class SaleCreationService
                     'quote' => 'Esta cotización ya generó una venta.',
                 ]);
             }
+            DataScope::assertCanAssignUser($actor, $data['owner_id'] ?? null, $quote->owner_id);
 
             $sale = Sale::create([
                 'number' => 'TMP-'.Str::uuid(),
@@ -103,6 +107,8 @@ class SaleCreationService
     public function createManual(array $data, User $actor): Sale
     {
         return DB::transaction(function () use ($data, $actor) {
+            $data['owner_id'] = DataScope::normalizeOwnerId($actor, $data['owner_id'] ?? null);
+            $this->assertScope($data, $actor);
             $this->assertCoherence($data);
 
             $items = $this->normalizeItems($data['items']);
@@ -160,6 +166,8 @@ class SaleCreationService
                 return $sale->fresh();
             }
 
+            $data['owner_id'] = DataScope::normalizeOwnerId($actor, $data['owner_id'] ?? null, $sale->owner_id);
+            $this->assertScope($data, $actor, $sale->owner_id);
             $this->assertCoherence($data);
 
             $items = $this->normalizeItems($data['items']);
@@ -251,6 +259,17 @@ class SaleCreationService
                 ]);
             }
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function assertScope(array $data, User $actor, ?int $currentOwnerId = null): void
+    {
+        DataScope::assertVisibleId($actor, Company::class, $data['company_id'] ?? null);
+        DataScope::assertVisibleId($actor, Contact::class, $data['contact_id'] ?? null);
+        DataScope::assertVisibleId($actor, Opportunity::class, $data['opportunity_id'] ?? null);
+        DataScope::assertCanAssignUser($actor, $data['owner_id'] ?? null, $currentOwnerId);
     }
 
     /**

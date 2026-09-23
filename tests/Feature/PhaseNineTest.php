@@ -233,15 +233,14 @@ class PhaseNineTest extends TestCase
     public function test_update_ticket_logs_assignee_change(): void
     {
         $user = $this->ticketAccess();
-        $other = User::factory()->create(['status' => 'active']);
         $ticket = $this->makeTicket($user, ['assigned_to' => null]);
 
         $response = $this->actingAs($user)->put("/tickets/{$ticket->id}", $this->ticketPayload([
-            'assigned_to' => $other->id,
+            'assigned_to' => $user->id,
         ]));
 
         $response->assertRedirect(route('tickets.show', $ticket));
-        $this->assertSame($other->id, $ticket->fresh()->assigned_to);
+        $this->assertSame($user->id, $ticket->fresh()->assigned_to);
         $this->assertTrue(
             $ticket->messages()->where('type', 'system')->where('body', 'like', '%Responsable cambiado%')->exists()
         );

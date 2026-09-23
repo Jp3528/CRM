@@ -30,7 +30,7 @@ use Tests\TestCase;
  *
  * Roles: Superadministrador/Administrador → global; Gerente/Supervisor → equipo;
  * Vendedor → propio; Soporte → regla propia en tickets; Consulta → solo lectura;
- * sin rol de alcance → legado (global, compatibilidad histórica).
+ * sin rol de alcance → propio (fallback seguro, sin acceso global implícito).
  */
 class DataScopeTest extends TestCase
 {
@@ -119,17 +119,32 @@ class DataScopeTest extends TestCase
 
     // ---------------- Compatibilidad ----------------
 
-    public function test_role_less_user_keeps_legacy_global_access(): void
+    public function test_role_less_user_does_not_get_implicit_global_access(): void
     {
-        $legacy = $this->makeUser($this->modPerms('companies'));
+        $roleLess = $this->makeUser($this->modPerms('companies'));
         $other = User::factory()->create(['status' => 'active']);
-        $mine = Company::factory()->create(['trade_name' => 'Mía', 'owner_id' => $legacy->id]);
+        Company::factory()->create(['trade_name' => 'Mía', 'owner_id' => $roleLess->id]);
         $theirs = Company::factory()->create(['trade_name' => 'Ajena', 'owner_id' => $other->id]);
 
-        $response = $this->actingAs($legacy)->get('/companies');
-        $response->assertOk()->assertSee('Mía')->assertSee('Ajena');
-        $this->actingAs($legacy)->get("/companies/{$theirs->id}")->assertOk();
-        $this->assertSame('legacy', DataScope::level($legacy));
+        $response = $this->actingAs($roleLess)->get('/companies');
+        $response->assertOk()->assertSee('Mía')->assertDontSee('Ajena');
+        $this->actingAs($roleLess)->get("/companies/{$theirs->id}")->assertForbidden();
+        $this->assertSame('own', DataScope::level($roleLess));
+    }
+
+    public function test_admin_global_scope_still_requires_functional_permission(): void
+    {
+        $teamA = $this->makeTeam('equipo-a');
+        $teamB = $this->makeTeam('equipo-b');
+
+        $adminWithoutPermission = $this->makeUser([], $teamA, ['Administrador']);
+        $adminWithPermission = $this->makeUser(['companies.view'], $teamA, ['Administrador']);
+        $vendorB = $this->makeUser([], $teamB, ['Vendedor']);
+
+        Company::factory()->create(['trade_name' => 'Ajena Global', 'owner_id' => $vendorB->id]);
+
+        $this->actingAs($adminWithoutPermission)->get('/companies')->assertForbidden();
+        $this->actingAs($adminWithPermission)->get('/companies')->assertOk()->assertSee('Ajena Global');
     }
 
     // ---------------- IDOR ----------------
@@ -401,6 +416,117 @@ class DataScopeTest extends TestCase
 
         $this->actingAs($vendorA)->get("/opportunities/{$oppA->id}")->assertOk()
             ->assertDontSee('Ajena Oculta SA');
+    }
+
+    public function test_forms_do_not_prefill_or_list_out_of_scope_related_records(): void
+    {
+        $teamA = $this->makeTeam('equipo-a');
+        $teamB = $this->makeTeam('equipo-b');
+        $perms = $this->modPerms('contacts', 'tasks', 'activities', 'quotes', 'opportunities');
+
+        $vendorA = $this->makeUser($perms, $teamA, ['Vendedor']);
+        $vendorB = $this->makeUser([], $teamB, ['Vendedor']);
+
+        $companyA = Company::factory()->create(['trade_name' => 'Visible Form', 'owner_id' => $vendorA->id]);
+        $companyB = Company::factory()->create(['trade_name' => 'Oculta Form', 'owner_id' => $vendorB->id]);
+        $oppB = $this->makeOpp($vendorB, $companyB);
+        $oppB->update(['name' => 'Prefill Ajeno']);
+
+        $contactCreate = $this->actingAs($vendorA)->get("/contacts/create?company_id={$companyB->id}");
+        $contactCreate->assertOk();
+        $this->assertNull($contactCreate->viewData('preselectedCompanyId'));
+        $this->assertContains($companyA->id, $contactCreate->viewData('companies')->pluck('id')->all());
+        $this->assertNotContains($companyB->id, $contactCreate->viewData('companies')->pluck('id')->all());
+
+        $taskCreate = $this->actingAs($vendorA)->get("/tasks/create?related=company:{$companyB->id}");
+        $taskCreate->assertOk();
+        $this->assertSame(['type' => null, 'id' => null, 'label' => null], $taskCreate->viewData('preselected'));
+
+        $activityCreate = $this->actingAs($vendorA)->get("/activities/create?related=company:{$companyB->id}");
+        $activityCreate->assertOk();
+        $this->assertSame(['type' => null, 'id' => null, 'label' => null], $activityCreate->viewData('preselected'));
+
+        $quoteCreate = $this->actingAs($vendorA)->get("/quotes/create?opportunity_id={$oppB->id}");
+        $quoteCreate->assertOk();
+        $this->assertSame([], $quoteCreate->viewData('prefill'));
+        $this->assertNotContains($oppB->id, $quoteCreate->viewData('opportunities')->pluck('id')->all());
+    }
+
+    public function test_direct_writes_reject_out_of_scope_related_ids_and_owner_ids(): void
+    {
+        $teamA = $this->makeTeam('equipo-a');
+        $teamB = $this->makeTeam('equipo-b');
+        $perms = array_merge($this->modPerms('companies', 'contacts', 'quotes', 'leads'), ['leads.convert']);
+
+        $vendorA = $this->makeUser($perms, $teamA, ['Vendedor']);
+        $vendorB = $this->makeUser([], $teamB, ['Vendedor']);
+        $companyB = Company::factory()->create(['trade_name' => 'Empresa Ajena Directa', 'owner_id' => $vendorB->id]);
+
+        $this->actingAs($vendorA)->post('/companies', [
+            'trade_name' => 'Reasignada',
+            'status' => 'active',
+            'owner_id' => $vendorB->id,
+        ])->assertForbidden();
+        $this->assertDatabaseMissing('companies', ['trade_name' => 'Reasignada']);
+
+        $this->actingAs($vendorA)->post('/contacts', [
+            'first_name' => 'Contacto',
+            'status' => 'active',
+            'company_id' => $companyB->id,
+            'owner_id' => $vendorA->id,
+        ])->assertForbidden();
+        $this->assertDatabaseMissing('contacts', ['first_name' => 'Contacto']);
+
+        $this->actingAs($vendorA)->post('/quotes', [
+            'company_id' => $companyB->id,
+            'owner_id' => $vendorA->id,
+            'currency' => 'USD',
+            'items' => [[
+                'description' => 'Servicio',
+                'unit' => 'unit',
+                'quantity' => 1,
+                'unit_price' => 100,
+            ]],
+        ])->assertForbidden();
+        $this->assertSame(0, Quote::count());
+
+        $leadA = Lead::factory()->create(['status' => 'qualified', 'owner_id' => $vendorA->id]);
+        $this->actingAs($vendorA)->post("/leads/{$leadA->id}/convert", [
+            'company_mode' => 'existing',
+            'company_id' => $companyB->id,
+            'contact_mode' => 'new',
+        ])->assertForbidden();
+        $this->assertSame('qualified', $leadA->fresh()->status);
+    }
+
+    public function test_indexes_hide_out_of_scope_relation_names_for_historical_rows(): void
+    {
+        $teamA = $this->makeTeam('equipo-a');
+        $teamB = $this->makeTeam('equipo-b');
+        $perms = $this->modPerms('contacts', 'quotes');
+
+        $vendorA = $this->makeUser($perms, $teamA, ['Vendedor']);
+        $vendorB = $this->makeUser([], $teamB, ['Vendedor']);
+
+        $companyB = Company::factory()->create(['trade_name' => 'Empresa Oculta Histórica', 'owner_id' => $vendorB->id]);
+        Contact::factory()->create([
+            'first_name' => 'Contacto Histórico',
+            'company_id' => $companyB->id,
+            'owner_id' => $vendorA->id,
+        ]);
+        Quote::factory()->create([
+            'number' => 'Q-2099-000099',
+            'company_id' => $companyB->id,
+            'owner_id' => $vendorA->id,
+        ]);
+
+        $this->actingAs($vendorA)->get('/contacts')->assertOk()
+            ->assertSee('Contacto Histórico')
+            ->assertDontSee('Empresa Oculta Histórica');
+
+        $this->actingAs($vendorA)->get('/quotes')->assertOk()
+            ->assertSee('Q-2099-000099')
+            ->assertDontSee('Empresa Oculta Histórica');
     }
 
     // ---------------- Tickets por rol ----------------

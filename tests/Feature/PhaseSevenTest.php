@@ -514,6 +514,7 @@ class PhaseSevenTest extends TestCase
         $quote = Quote::factory()->create([
             'status' => 'draft',
             'valid_until' => now()->subDay()->format('Y-m-d'),
+            'owner_id' => $user->id,
         ]);
 
         $this->assertTrue($quote->is_expired);

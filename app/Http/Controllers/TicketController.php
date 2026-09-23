@@ -58,7 +58,11 @@ class TicketController extends Controller
 
         $tickets = Ticket::query()
             ->visibleTo($user)
-            ->with(['company:id,trade_name', 'contact:id,first_name,last_name', 'category:id,name', 'assignee:id,name'])
+            ->with([
+                'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+                'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
+                'category:id,name', 'assignee:id,name',
+            ])
             ->search($validated['search'] ?? null)
             ->status($status)
             ->priority($priority)
@@ -89,19 +93,29 @@ class TicketController extends Controller
             'channels' => Ticket::CHANNELS,
             'categories' => TicketCategory::orderBy('name')->get(['id', 'name']),
             'users' => DataScope::filterableUsers($user),
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
+            'companies' => Company::visibleTo($user)->orderBy('trade_name')->get(['id', 'trade_name']),
         ]);
     }
 
     public function create(Request $request): View
     {
         $this->authorize('create', Ticket::class);
+        $preselectedCompanyId = $request->integer('company_id') ?: null;
+        $preselectedContactId = $request->integer('contact_id') ?: null;
+
+        if (! DataScope::isVisibleId($request->user(), Company::class, $preselectedCompanyId)) {
+            $preselectedCompanyId = null;
+        }
+
+        if (! DataScope::isVisibleId($request->user(), Contact::class, $preselectedContactId)) {
+            $preselectedContactId = null;
+        }
 
         return view('tickets.create', array_merge(
             $this->formData(),
             [
-                'preselectedCompanyId' => $request->integer('company_id') ?: null,
-                'preselectedContactId' => $request->integer('contact_id') ?: null,
+                'preselectedCompanyId' => $preselectedCompanyId,
+                'preselectedContactId' => $preselectedContactId,
             ]
         ));
     }
@@ -109,6 +123,9 @@ class TicketController extends Controller
     public function store(StoreTicketRequest $request): RedirectResponse
     {
         $data = $this->normalizeContactCompany($request->validated());
+        DataScope::assertVisibleId($request->user(), Company::class, $data['company_id'] ?? null);
+        DataScope::assertVisibleId($request->user(), Contact::class, $data['contact_id'] ?? null);
+        DataScope::assertCanAssignUser($request->user(), $data['assigned_to'] ?? null);
 
         $ticket = DB::transaction(function () use ($data, $request) {
             $ticket = Ticket::create([
@@ -152,8 +169,8 @@ class TicketController extends Controller
         $user = request()->user();
 
         $ticket->load([
-            'company:id,trade_name',
-            'contact:id,first_name,last_name,company_id',
+            'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+            'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
             'assignee:id,name,email',
             'creator:id,name',
             'category:id,name',
@@ -183,6 +200,9 @@ class TicketController extends Controller
     {
         $data = $this->normalizeContactCompany($request->validated());
         $actor = $request->user();
+        DataScope::assertVisibleId($actor, Company::class, $data['company_id'] ?? null);
+        DataScope::assertVisibleId($actor, Contact::class, $data['contact_id'] ?? null);
+        DataScope::assertCanAssignUser($actor, $data['assigned_to'] ?? null, $ticket->assigned_to);
 
         DB::transaction(function () use ($data, $ticket, $actor) {
             $before = $ticket->only(['assigned_to', 'priority']);
@@ -252,8 +272,10 @@ class TicketController extends Controller
     private function formData(?Ticket $ticket = null): array
     {
         return [
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
-            'contacts' => Contact::with('company:id,trade_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
+            'companies' => Company::visibleTo(auth()->user())->orderBy('trade_name')->get(['id', 'trade_name']),
+            'contacts' => Contact::visibleTo(auth()->user())
+                ->with(['company' => fn ($q) => $q->visibleTo(auth()->user())->select('id', 'trade_name', 'owner_id')])
+                ->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
             'categories' => TicketCategory::orderBy('name')->get(['id', 'name']),
             'assignees' => DataScope::filterableUsers(auth()->user(), $ticket?->assigned_to),
             'priorities' => Ticket::PRIORITIES,

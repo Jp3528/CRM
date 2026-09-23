@@ -50,13 +50,13 @@ class DashboardController extends Controller
         $expiringQuotes = collect();
 
         if ($user->can('viewAny', Quote::class)) {
-            $pendingQuotes = Quote::with('company:id,trade_name')
+            $pendingQuotes = Quote::with(['company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id')])
                 ->visibleTo($user)
                 ->whereIn('status', ['draft', 'sent'])
                 ->orderBy('valid_until')
                 ->limit(5)
                 ->get();
-            $expiringQuotes = Quote::with('company:id,trade_name')
+            $expiringQuotes = Quote::with(['company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id')])
                 ->visibleTo($user)
                 ->whereIn('status', ['draft', 'sent'])
                 ->whereNotNull('valid_until')
@@ -81,13 +81,13 @@ class DashboardController extends Controller
             'expiringQuotes' => $expiringQuotes,
             'canSeeQuotes' => $user->can('viewAny', Quote::class),
             'recentSales' => $user->can('viewAny', Sale::class)
-                ? Sale::with('company:id,trade_name')->visibleTo($user)->latest()->limit(5)->get()
+                ? Sale::with(['company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id')])->visibleTo($user)->latest()->limit(5)->get()
                 : collect(),
             'pendingInvoices' => $user->can('viewAny', Invoice::class)
-                ? Invoice::with('company:id,trade_name')->visibleTo($user)->whereIn('status', ['draft', 'sent'])->latest()->limit(5)->get()
+                ? Invoice::with(['company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id')])->visibleTo($user)->whereIn('status', ['draft', 'sent'])->latest()->limit(5)->get()
                 : collect(),
             'overdueInvoices' => $user->can('viewAny', Invoice::class)
-                ? Invoice::with('company:id,trade_name')->visibleTo($user)->whereNotNull('due_date')
+                ? Invoice::with(['company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id')])->visibleTo($user)->whereNotNull('due_date')
                     ->whereDate('due_date', '<', today())
                     ->whereNotIn('status', ['paid', 'cancelled'])->orderBy('due_date')->limit(5)->get()
                 : collect(),
@@ -97,7 +97,7 @@ class DashboardController extends Controller
                 ? Ticket::visibleTo($user)->whereIn('status', ['new', 'open', 'pending'])->count()
                 : 0,
             'urgentTickets' => $user->can('viewAny', Ticket::class)
-                ? Ticket::with('company:id,trade_name')->visibleTo($user)->where('priority', 'urgent')
+                ? Ticket::with(['company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id')])->visibleTo($user)->where('priority', 'urgent')
                     ->whereNotIn('status', ['resolved', 'closed'])->latest()->limit(5)->get()
                 : collect(),
             'unassignedTickets' => $user->can('viewAny', Ticket::class)

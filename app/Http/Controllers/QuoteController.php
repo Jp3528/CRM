@@ -47,8 +47,10 @@ class QuoteController extends Controller
         $quotes = Quote::query()
             ->visibleTo($user)
             ->with([
-                'company:id,trade_name', 'contact:id,first_name,last_name',
-                'opportunity:id,name', 'owner:id,name',
+                'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+                'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
+                'opportunity' => fn ($q) => $q->visibleTo($user)->select('id', 'name', 'owner_id'),
+                'owner:id,name',
             ])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
@@ -75,7 +77,7 @@ class QuoteController extends Controller
             ],
             'statuses' => Quote::STATUSES,
             'owners' => DataScope::filterableUsers($user),
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
+            'companies' => Company::visibleTo($user)->orderBy('trade_name')->get(['id', 'trade_name']),
             'currencies' => Opportunity::CURRENCIES,
         ]);
     }
@@ -84,7 +86,7 @@ class QuoteController extends Controller
     {
         $this->authorize('create', Quote::class);
 
-        $prefill = $this->prefillFromOpportunity($request->integer('opportunity_id') ?: null);
+        $prefill = $this->prefillFromOpportunity($request->user(), $request->integer('opportunity_id') ?: null);
 
         return view('quotes.create', array_merge(
             $this->formData(),
@@ -103,22 +105,21 @@ class QuoteController extends Controller
     public function show(Quote $quote): View
     {
         $this->authorize('view', $quote);
+        $user = request()->user();
 
         $quote->load([
-            'company:id,trade_name,legal_name',
-            'contact:id,first_name,last_name',
-            'opportunity:id,name',
+            'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'legal_name', 'owner_id'),
+            'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
+            'opportunity' => fn ($q) => $q->visibleTo($user)->select('id', 'name', 'owner_id'),
             'owner:id,name,email',
             'items' => fn ($q) => $q->with('product:id,sku,name')->orderBy('position'),
         ]);
-
-        $user = request()->user();
 
         return view('quotes.show', [
             'quote' => $quote,
             'canUpdate' => $user->can('update', $quote),
             'editable' => in_array($quote->status, Quote::EDITABLE_STATUSES, true),
-            'sale' => $quote->sale()->first(['id', 'number', 'status', 'total', 'currency']),
+            'sale' => $quote->sale()->visibleTo($user)->first(['id', 'number', 'status', 'total', 'currency']),
             'canCreateSale' => $user->can('create', \App\Models\Sale::class),
             'canViewCompany' => DataScope::canViewModel($user, $quote->company),
             'canViewContact' => DataScope::canViewModel($user, $quote->contact),
@@ -164,9 +165,13 @@ class QuoteController extends Controller
     public function print(Quote $quote): View
     {
         $this->authorize('view', $quote);
+        $user = request()->user();
 
         $quote->load([
-            'company', 'contact', 'opportunity:id,name', 'owner:id,name',
+            'company' => fn ($q) => $q->visibleTo($user),
+            'contact' => fn ($q) => $q->visibleTo($user),
+            'opportunity' => fn ($q) => $q->visibleTo($user)->select('id', 'name'),
+            'owner:id,name',
             'items' => fn ($q) => $q->orderBy('position'),
         ]);
 
@@ -179,13 +184,14 @@ class QuoteController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function prefillFromOpportunity(?int $opportunityId): array
+    private function prefillFromOpportunity(User $user, ?int $opportunityId): array
     {
         if (! $opportunityId) {
             return [];
         }
 
-        $opportunity = Opportunity::with(['company:id,trade_name', 'contact:id,first_name,last_name,company_id'])
+        $opportunity = Opportunity::visibleTo($user)
+            ->with(['company:id,trade_name', 'contact:id,first_name,last_name,company_id'])
             ->find($opportunityId);
 
         if (! $opportunity) {
@@ -209,9 +215,13 @@ class QuoteController extends Controller
         $products = Product::where('status', 'active')->orderBy('name')->get(['id', 'sku', 'name', 'unit', 'price', 'tax_rate']);
 
         return [
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
-            'contacts' => Contact::with('company:id,trade_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
-            'opportunities' => Opportunity::with('company:id,trade_name')->where('status', 'open')->orderBy('name')->get(['id', 'name', 'company_id', 'currency']),
+            'companies' => Company::visibleTo(auth()->user())->orderBy('trade_name')->get(['id', 'trade_name']),
+            'contacts' => Contact::visibleTo(auth()->user())
+                ->with(['company' => fn ($q) => $q->visibleTo(auth()->user())->select('id', 'trade_name', 'owner_id')])
+                ->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
+            'opportunities' => Opportunity::visibleTo(auth()->user())
+                ->with(['company' => fn ($q) => $q->visibleTo(auth()->user())->select('id', 'trade_name', 'owner_id')])
+                ->where('status', 'open')->orderBy('name')->get(['id', 'name', 'company_id', 'currency']),
             'owners' => DataScope::filterableUsers(auth()->user(), $quote?->owner_id),
             'currencies' => Opportunity::CURRENCIES,
             'products' => $products,

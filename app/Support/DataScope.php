@@ -30,8 +30,7 @@ use Illuminate\Support\Collection;
  *  - global : Superadministrador, Administrador (todo lo permitido).
  *  - team   : Gerente comercial, Supervisor (propio + mismo equipo no nulo).
  *  - own    : Vendedor, Soporte, Consulta (propio/asignado; tickets con regla propia).
- *  - legacy : sin roles de alcance → comportamiento histórico (global).
- *             Existe solo por compatibilidad (permisos directos sin rol).
+ *  - own    : también es el fallback seguro para usuarios sin rol de alcance.
  *
  * Protección null-team: dos usuarios con team_id null NUNCA se consideran
  * del mismo equipo (el equipo null no agrupa).
@@ -95,12 +94,12 @@ final class DataScope
             return 'own';
         }
 
-        return 'legacy';
+        return 'own';
     }
 
     public static function isUnconstrained(User $user): bool
     {
-        return in_array(self::level($user), ['global', 'legacy'], true);
+        return self::level($user) === 'global';
     }
 
     /**
@@ -155,7 +154,7 @@ final class DataScope
     }
 
     /**
-     * Registros sin responsable solo son visibles con alcance global/legacy.
+     * Registros sin responsable solo son visibles con alcance global.
      */
     public static function canAccessOwner(User $viewer, ?User $owner): bool
     {
@@ -277,15 +276,7 @@ final class DataScope
             return null;
         }
 
-        $query = $class::query()->select('id');
-
-        match (true) {
-            $class === Task::class => self::scopeTasks($query, $user),
-            $class === Ticket::class => self::scopeTickets($query, $user),
-            default => self::scopeOwned($query, $user),
-        };
-
-        return $query->pluck('id')->all();
+        return self::visibleRecords($user, $class)->pluck('id')->all();
     }
 
     public static function scopeActivities(Builder $query, User $user): Builder
@@ -348,6 +339,82 @@ final class DataScope
     }
 
     /**
+     * Query base de un modelo, ya filtrada por alcance.
+     *
+     * @param  class-string<Model>  $class
+     */
+    public static function visibleRecords(User $user, string $class): Builder
+    {
+        $query = $class::query();
+
+        return match ($class) {
+            Task::class => self::scopeTasks($query, $user),
+            Ticket::class => self::scopeTickets($query, $user),
+            Activity::class => self::scopeActivities($query, $user),
+            Product::class, ProductCategory::class => $query,
+            default => self::scopeOwned($query, $user),
+        };
+    }
+
+    /**
+     * Valida IDs recibidos por request sin hidratar colecciones completas.
+     *
+     * @param  class-string<Model>  $class
+     */
+    public static function isVisibleId(User $user, string $class, mixed $id): bool
+    {
+        if (blank($id)) {
+            return true;
+        }
+
+        return self::visibleRecords($user, $class)->whereKey($id)->exists();
+    }
+
+    /**
+     * @param  class-string<Model>  $class
+     */
+    public static function assertVisibleId(User $user, string $class, mixed $id): void
+    {
+        abort_unless(self::isVisibleId($user, $class, $id), 403);
+    }
+
+    /** @return array<int, int> */
+    public static function filterableUserIds(User $user, ?int $includeId = null): array
+    {
+        return self::filterableUsers($user, $includeId)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    public static function canAssignUser(User $user, mixed $targetId, ?int $includeId = null): bool
+    {
+        if (blank($targetId)) {
+            return true;
+        }
+
+        return in_array((int) $targetId, self::filterableUserIds($user, $includeId), true);
+    }
+
+    public static function assertCanAssignUser(User $user, mixed $targetId, ?int $includeId = null): void
+    {
+        abort_unless(self::canAssignUser($user, $targetId, $includeId), 403);
+    }
+
+    public static function normalizeOwnerId(User $user, mixed $ownerId, ?int $currentOwnerId = null): ?int
+    {
+        if (! blank($ownerId)) {
+            return (int) $ownerId;
+        }
+
+        if ($currentOwnerId !== null) {
+            return $currentOwnerId;
+        }
+
+        return self::isUnconstrained($user) ? null : (int) $user->id;
+    }
+
+    /**
      * Usuarios ofrecibles en filtros/selectores de responsable.
      * Con $includeId se preserva el valor existente aunque esté fuera de
      * alcance (edición sin romper la relación actual).
@@ -356,7 +423,7 @@ final class DataScope
     {
         $level = self::level($user);
 
-        if (in_array($level, ['global', 'legacy'], true)) {
+        if ($level === 'global') {
             $list = User::where('status', 'active')->orderBy('name')->get(['id', 'name']);
         } elseif ($level === 'team' && $user->team_id !== null) {
             $list = User::where('team_id', $user->team_id)

@@ -82,7 +82,7 @@ class TaskController extends Controller
 
         return view('tasks.create', array_merge(
             $this->formData(),
-            ['preselected' => $this->parseRelated($request->query('related'))]
+            ['preselected' => $this->parseRelated($request->user(), $request->query('related'))]
         ));
     }
 
@@ -91,6 +91,7 @@ class TaskController extends Controller
         $data = $request->validated();
 
         $this->assertRelatedVisible($request->user(), $data);
+        DataScope::assertCanAssignUser($request->user(), $data['assigned_to'] ?? null);
 
         $task = Task::create([
             'title' => $data['title'],
@@ -145,6 +146,7 @@ class TaskController extends Controller
         $data = $request->validated();
 
         $this->assertRelatedVisible($request->user(), $data);
+        DataScope::assertCanAssignUser($request->user(), $data['assigned_to'] ?? null, $task->assigned_to);
 
         // Invariantes de estado/fechas, igual que en complete/reopen/cancel.
         $completedAt = $task->completed_at;
@@ -202,7 +204,7 @@ class TaskController extends Controller
      *
      * @return array{type: ?string, id: ?int, label: ?string}
      */
-    private function parseRelated(?string $raw): array
+    private function parseRelated(User $actor, ?string $raw): array
     {
         if (! $raw || ! str_contains($raw, ':')) {
             return ['type' => null, 'id' => null, 'label' => null];
@@ -216,6 +218,10 @@ class TaskController extends Controller
         }
 
         $model = $class::find($id);
+
+        if (! DataScope::canViewModel($actor, $model)) {
+            return ['type' => null, 'id' => null, 'label' => null];
+        }
 
         return [
             'type' => $model ? $type : null,

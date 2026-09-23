@@ -50,7 +50,11 @@ class OpportunityController extends Controller
 
         $opportunities = Opportunity::query()
             ->visibleTo($user)
-            ->with(['company:id,trade_name', 'contact:id,first_name,last_name', 'pipeline:id,name', 'stage:id,name', 'owner:id,name'])
+            ->with([
+                'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+                'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
+                'pipeline:id,name', 'stage:id,name', 'owner:id,name',
+            ])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
             ->pipeline($validated['pipeline_id'] ?? null)
@@ -83,7 +87,7 @@ class OpportunityController extends Controller
             'pipelines' => Pipeline::orderBy('name')->get(['id', 'name']),
             'stages' => \App\Models\PipelineStage::with('pipeline:id,name')->orderBy('pipeline_id')->orderBy('position')->get(['id', 'name', 'pipeline_id']),
             'owners' => DataScope::filterableUsers($user),
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
+            'companies' => Company::visibleTo($user)->orderBy('trade_name')->get(['id', 'trade_name']),
         ]);
     }
 
@@ -104,7 +108,10 @@ class OpportunityController extends Controller
 
         // Solo oportunidades dentro del alcance: columnas y totales sin fugas.
         $stages = $pipeline->stages()->with([
-            'opportunities' => fn ($q) => $q->visibleTo($user)->with(['company:id,trade_name', 'owner:id,name'])
+            'opportunities' => fn ($q) => $q->visibleTo($user)->with([
+                'company' => fn ($cq) => $cq->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+                'owner:id,name',
+            ])
                 ->orderBy('expected_close_date')->orderBy('id'),
         ])->get();
 
@@ -153,9 +160,9 @@ class OpportunityController extends Controller
         $user = request()->user();
 
         $opportunity->load([
-            'company:id,trade_name,legal_name',
-            'contact:id,first_name,last_name,company_id',
-            'lead:id,first_name,last_name,company_name',
+            'company:id,trade_name,legal_name,owner_id',
+            'contact:id,first_name,last_name,company_id,owner_id',
+            'lead:id,first_name,last_name,company_name,owner_id',
             'owner:id,name,email',
             'pipeline:id,name',
             'stage:id,name,probability,is_won,is_lost,pipeline_id',
@@ -196,6 +203,11 @@ class OpportunityController extends Controller
     {
         // La etapa/pipeline/status se cambian solo vía OpportunityStageService (move).
         $data = collect($request->validated())->except(['tags', 'new_tags'])->all();
+        $data['owner_id'] = DataScope::normalizeOwnerId($request->user(), $data['owner_id'] ?? null, $opportunity->owner_id);
+        DataScope::assertVisibleId($request->user(), Company::class, $data['company_id'] ?? null);
+        DataScope::assertVisibleId($request->user(), Contact::class, $data['contact_id'] ?? null);
+        DataScope::assertVisibleId($request->user(), Lead::class, $data['lead_id'] ?? null);
+        DataScope::assertCanAssignUser($request->user(), $data['owner_id'] ?? null, $opportunity->owner_id);
 
         $opportunity->update($data);
         $this->syncTags($opportunity, $request->validated()['tags'] ?? [], $request->validated()['new_tags'] ?? null);
@@ -236,9 +248,11 @@ class OpportunityController extends Controller
     {
         return [
             'owners' => DataScope::filterableUsers(auth()->user(), $opportunity?->owner_id),
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
-            'contacts' => Contact::with('company:id,trade_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
-            'leads' => Lead::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_name']),
+            'companies' => Company::visibleTo(auth()->user())->orderBy('trade_name')->get(['id', 'trade_name']),
+            'contacts' => Contact::visibleTo(auth()->user())
+                ->with(['company' => fn ($q) => $q->visibleTo(auth()->user())->select('id', 'trade_name', 'owner_id')])
+                ->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
+            'leads' => Lead::visibleTo(auth()->user())->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_name']),
             'pipelines' => Pipeline::with('stages:id,name,pipeline_id,probability,is_won,is_lost')->orderBy('name')->get(),
             'allTags' => Tag::orderBy('name')->get(['id', 'name']),
             'currencies' => Opportunity::CURRENCIES,

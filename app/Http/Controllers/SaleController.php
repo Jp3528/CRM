@@ -47,8 +47,11 @@ class SaleController extends Controller
         $sales = Sale::query()
             ->visibleTo($user)
             ->with([
-                'company:id,trade_name', 'contact:id,first_name,last_name',
-                'opportunity:id,name', 'quote:id,number', 'owner:id,name',
+                'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+                'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
+                'opportunity' => fn ($q) => $q->visibleTo($user)->select('id', 'name', 'owner_id'),
+                'quote' => fn ($q) => $q->visibleTo($user)->select('id', 'number', 'owner_id'),
+                'owner:id,name',
             ])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
@@ -75,7 +78,7 @@ class SaleController extends Controller
             ],
             'statuses' => Sale::STATUSES,
             'owners' => DataScope::filterableUsers($user),
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
+            'companies' => Company::visibleTo($user)->orderBy('trade_name')->get(['id', 'trade_name']),
             'currencies' => Opportunity::CURRENCIES,
         ]);
     }
@@ -98,18 +101,17 @@ class SaleController extends Controller
     public function show(Sale $sale): View
     {
         $this->authorize('view', $sale);
+        $user = request()->user();
 
         $sale->load([
-            'quote:id,number,status',
-            'company:id,trade_name,legal_name',
-            'contact:id,first_name,last_name',
-            'opportunity:id,name',
+            'quote' => fn ($q) => $q->visibleTo($user)->select('id', 'number', 'status', 'owner_id'),
+            'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'legal_name', 'owner_id'),
+            'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
+            'opportunity' => fn ($q) => $q->visibleTo($user)->select('id', 'name', 'owner_id'),
             'owner:id,name,email',
-            'invoice:id,number,status,total,currency',
+            'invoice' => fn ($q) => $q->visibleTo($user)->select('id', 'sale_id', 'number', 'status', 'total', 'currency', 'owner_id'),
             'items' => fn ($q) => $q->with('product:id,sku,name')->orderBy('position'),
         ]);
-
-        $user = request()->user();
 
         return view('sales.show', [
             'sale' => $sale,
@@ -162,9 +164,13 @@ class SaleController extends Controller
     public function print(Sale $sale): View
     {
         $this->authorize('view', $sale);
+        $user = request()->user();
 
         $sale->load([
-            'company', 'contact', 'opportunity:id,name', 'owner:id,name',
+            'company' => fn ($q) => $q->visibleTo($user),
+            'contact' => fn ($q) => $q->visibleTo($user),
+            'opportunity' => fn ($q) => $q->visibleTo($user)->select('id', 'name'),
+            'owner:id,name',
             'items' => fn ($q) => $q->orderBy('position'),
         ]);
 
@@ -177,9 +183,13 @@ class SaleController extends Controller
     private function formData(?Sale $sale = null): array
     {
         return [
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
-            'contacts' => Contact::with('company:id,trade_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
-            'opportunities' => Opportunity::with('company:id,trade_name')->where('status', 'open')->orderBy('name')->get(['id', 'name', 'company_id']),
+            'companies' => Company::visibleTo(auth()->user())->orderBy('trade_name')->get(['id', 'trade_name']),
+            'contacts' => Contact::visibleTo(auth()->user())
+                ->with(['company' => fn ($q) => $q->visibleTo(auth()->user())->select('id', 'trade_name', 'owner_id')])
+                ->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
+            'opportunities' => Opportunity::visibleTo(auth()->user())
+                ->with(['company' => fn ($q) => $q->visibleTo(auth()->user())->select('id', 'trade_name', 'owner_id')])
+                ->where('status', 'open')->orderBy('name')->get(['id', 'name', 'company_id']),
             'owners' => DataScope::filterableUsers(auth()->user(), $sale?->owner_id),
             'currencies' => Opportunity::CURRENCIES,
             'products' => Product::where('status', 'active')->orderBy('name')->get(['id', 'sku', 'name', 'unit', 'price', 'tax_rate']),

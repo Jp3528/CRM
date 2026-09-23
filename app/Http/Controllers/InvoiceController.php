@@ -39,7 +39,9 @@ class InvoiceController extends Controller
         $invoices = Invoice::query()
             ->visibleTo($user)
             ->with([
-                'sale:id,number', 'company:id,trade_name', 'contact:id,first_name,last_name',
+                'sale' => fn ($q) => $q->visibleTo($user)->select('id', 'number', 'owner_id'),
+                'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+                'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
                 'owner:id,name',
             ])
             ->search($validated['search'] ?? null)
@@ -67,7 +69,7 @@ class InvoiceController extends Controller
             ],
             'statuses' => Invoice::STATUSES,
             'owners' => DataScope::filterableUsers($user),
-            'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
+            'companies' => Company::visibleTo($user)->orderBy('trade_name')->get(['id', 'trade_name']),
             'currencies' => Opportunity::CURRENCIES,
         ]);
     }
@@ -75,16 +77,15 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice): View
     {
         $this->authorize('view', $invoice);
+        $user = request()->user();
 
         $invoice->load([
-            'sale:id,number,status',
-            'company:id,trade_name,legal_name',
-            'contact:id,first_name,last_name',
+            'sale' => fn ($q) => $q->visibleTo($user)->select('id', 'number', 'status', 'owner_id'),
+            'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'legal_name', 'owner_id'),
+            'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
             'owner:id,name,email',
             'items' => fn ($q) => $q->with('product:id,sku,name')->orderBy('position'),
         ]);
-
-        $user = request()->user();
 
         return view('invoices.show', [
             'invoice' => $invoice,
@@ -108,9 +109,13 @@ class InvoiceController extends Controller
     public function print(Invoice $invoice): View
     {
         $this->authorize('view', $invoice);
+        $user = request()->user();
 
         $invoice->load([
-            'company', 'contact', 'owner:id,name', 'sale:id,number',
+            'company' => fn ($q) => $q->visibleTo($user),
+            'contact' => fn ($q) => $q->visibleTo($user),
+            'owner:id,name',
+            'sale' => fn ($q) => $q->visibleTo($user)->select('id', 'number'),
             'items' => fn ($q) => $q->orderBy('position'),
         ]);
 

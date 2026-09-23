@@ -63,9 +63,9 @@ class CompanyController extends Controller
                 'direction' => $direction,
             ],
             'statuses' => Company::STATUSES,
-            'industries' => Company::query()->select('industry')->distinct()
+            'industries' => Company::visibleTo($user)->select('industry')->distinct()
                 ->whereNotNull('industry')->orderBy('industry')->pluck('industry'),
-            'countries' => Company::query()->select('country')->distinct()
+            'countries' => Company::visibleTo($user)->select('country')->distinct()
                 ->whereNotNull('country')->orderBy('country')->pluck('country'),
             'owners' => DataScope::filterableUsers($user),
         ]);
@@ -81,6 +81,8 @@ class CompanyController extends Controller
     public function store(StoreCompanyRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $data['owner_id'] = DataScope::normalizeOwnerId($request->user(), $data['owner_id'] ?? null);
+        DataScope::assertCanAssignUser($request->user(), $data['owner_id'] ?? null);
 
         $company = Company::create(collect($data)->except(['tags', 'new_tags'])->all());
         $this->syncTags($company, $data['tags'] ?? [], $data['new_tags'] ?? null);
@@ -134,6 +136,8 @@ class CompanyController extends Controller
     public function update(UpdateCompanyRequest $request, Company $company): RedirectResponse
     {
         $data = $request->validated();
+        $data['owner_id'] = DataScope::normalizeOwnerId($request->user(), $data['owner_id'] ?? null, $company->owner_id);
+        DataScope::assertCanAssignUser($request->user(), $data['owner_id'] ?? null, $company->owner_id);
 
         $company->update(collect($data)->except(['tags', 'new_tags'])->all());
         $this->syncTags($company, $data['tags'] ?? [], $data['new_tags'] ?? null);

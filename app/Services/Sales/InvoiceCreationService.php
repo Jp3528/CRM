@@ -5,6 +5,7 @@ namespace App\Services\Sales;
 use App\Models\Invoice;
 use App\Models\Sale;
 use App\Models\User;
+use App\Support\DataScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +25,7 @@ class InvoiceCreationService
     {
         return DB::transaction(function () use ($sale, $actor, $data) {
             $sale = Sale::whereKey($sale->id)->lockForUpdate()->firstOrFail();
+            abort_unless(DataScope::canViewModel($actor, $sale), 403);
 
             if ($sale->trashed()) {
                 throw ValidationException::withMessages([
