@@ -38,7 +38,7 @@
                 @can('companies.view')<li><a class="text-slate-700 hover:underline" href="{{ route('companies.index') }}">· Empresas</a></li>@endcan
                 @can('contacts.view')<li><a class="text-slate-700 hover:underline" href="{{ route('contacts.index') }}">· Contactos</a></li>@endcan
                 @can('leads.view')<li><a class="text-slate-700 hover:underline" href="{{ route('leads.index') }}">· Leads</a></li>@endcan
-                @can('opportunities.view')<li><a class="text-slate-700 hover:underline" href="{{ route('opportunities.index') }}">· Oportunidades (próximamente)</a></li>@endcan
+                @can('opportunities.view')<li><a class="text-slate-700 hover:underline" href="{{ route('opportunities.index') }}">· Oportunidades</a></li>@endcan
                 @can('tasks.view')<li><a class="text-slate-700 hover:underline" href="{{ route('tasks.index') }}">· Tareas (próximamente)</a></li>@endcan
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan
                 <li><a class="text-slate-700 hover:underline" href="{{ route('profile.edit') }}">· Mi perfil</a></li>

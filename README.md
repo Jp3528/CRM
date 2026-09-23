@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 4: Leads + calificación + conversión.
+CRM empresarial web construido con Laravel. Fase 5: Oportunidades + pipeline + Kanban.
 
 ## Stack
 
@@ -167,6 +167,48 @@ cubierto por el sync total):
   `leads.convert.store`, `leads.qualify`, `leads.tags.detach` bajo `auth`+`active`.
   Sidebar Leads activo; dashboard con accesos a Empresas/Contactos/Leads.
 
+## Fase 5 — Oportunidades + pipeline comercial + Kanban
+
+CRUD con `OpportunityPolicy` (viewAny/view/create/update/delete + `move` →
+`opportunities.update`; decisión documentada: sin permisos `move`/`close` separados
+para no multiplicar la matriz; Superadministrador intacto). Sin migraciones nuevas.
+
+- Esquema real: `name, description, amount decimal(15,2), currency, probability,
+  expected_close_date, actual_close_date, status, loss_reason, owner_id, pipeline_id,
+  pipeline_stage_id, company_id, contact_id, lead_id` + SoftDeletes + historial
+  (`opportunity_id, from_stage_id nullable, to_stage_id, changed_by, changed_at, notes`).
+- Estados `Opportunity::STATUSES = open, won, lost`; sincronización unidireccional
+  etapa→status/probability/cierre (`is_won → won/100/close`, `is_lost → lost/0/close+motivo`,
+  normal → open/prob-etapa/null/null). `probability` siempre desde la etapa (sin doble fuente).
+- `company_id` requerida en creación/edición; contacto coherente (otra empresa → rechazo;
+  sin empresa → vinculación explícita); `lead_id` inmutable una vez asignado.
+- `currency` como campo con selección limitada `USD/COP/EUR/MXN` (default USD, igual que
+  Fase 4); no existe configuración monetaria funcional en settings, sin multi-moneda.
+- Listado: nombre, empresa/contacto, pipeline/etapa, valor, probabilidad, ponderado
+  (`amount × probability / 100`, informativo), responsable, cierre previsto, estado.
+  Búsqueda (nombre, descripción, empresa, contacto), filtros (estado, pipeline, etapa,
+  owner, empresa, monto mín/máx, cierre desde/hasta), whitelist
+  (`name, amount, probability, expected_close_date, created_at, status`), paginación 15.
+- Crear con `StoreOpportunityRequest` vía `OpportunityStageService::create` (valida
+  etapa∈pipeline, exige motivo si Perdida, sincroniza, historial inicial from=null,
+  actividad). Editar con `UpdateOpportunityRequest` (sin pipeline/etapa/status: solo vía
+  move; documentado en la vista).
+- Movimiento (`OpportunityStageController@update`, `PATCH opportunities/{id}/stage`):
+  `MoveOpportunityStageRequest` (autoriza `move`), servicio con `lockForUpdate` +
+  `DB::transaction`, valida etapa∈pipeline, no-op sin historial si misma etapa, exige
+  `loss_reason` en Perdida, reapertura limpia cierre/motivo. Responde JSON (Kanban) o
+  redirect con flash. Cada movimiento válido genera historial + actividad `status_change`.
+- Ficha: comercial, relaciones (empresa/contacto/lead con enlaces), mover-etapa,
+  timeline de historial (from→to/usuario/fecha), actividades, tareas (solo lectura),
+  tags con `SyncsTags`.
+- Kanban (`opportunities/kanban` antes del resource): selector de pipeline (?pipeline_id,
+  default Ventas/is_default), 7 columnas con conteo + suma, tarjetas (nombre/empresa/
+  monto/prob/owner/cierre), drag&drop Alpine + HTML5 DnD con `fetch` PATCH + CSRF,
+  optimistic UI con reversión y error visible; responsive con scroll horizontal.
+- Rutas `opportunities.*`, `opportunities.kanban`, `opportunities.stage.update`,
+  `opportunities.tags.detach` bajo `auth`+`active`. Sidebar Oportunidades activo;
+  dashboard con acceso directo.
+
 ## Tests
 
 ```sh
@@ -188,16 +230,23 @@ sorting por score, paginación 15, tags, calificación, conversión a Company+Co
 trazabilidad converted_*, reconversión bloqueada, conversión exige qualified,
 403 sin leads.convert, rollback total ante fallo, actividad de conversión.
 
++ Fase 5 (`tests/Feature/PhaseFiveTest`, 25 tests): CRUD oportunidades, 403 (9 ops),
+validación, lead origen inmutable, coherencia empresa/contacto, soft delete sin arrastre,
+búsqueda (nombre/empresa/contacto/descripción), filtros (estado/pipeline/etapa/owner/
+empresa/monto/cierre), sorting amount, paginación 15, tags, movimiento con historial+
+sincronización+actividad, no-op sin historial, etapa ajena rechazada, Ganada/Perdida
+(requiere motivo) con sincronización, reaperturas, atomicidad ante fallo, endpoint JSON,
+Kanban (columnas/totales/tarjetas), compatibilidad con conversión Fase 4.
+
 ## Frontend
 
 ```sh
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 4)
+## Alcance actual (Fase 5)
 
-Leads funciona completamente (CRUD + calificación + conversión transaccional).
-Empresas y Contactos continúan activos. La oportunidad creada en conversión existe
-solo como dato backend; su interfaz completa llega en Fase 5. Todavía NO hay:
-Kanban, tareas globales, productos, cotizaciones, ventas, tickets, campañas,
-automatizaciones, reportes, API ni integraciones.
+Oportunidades + pipeline Ventas + Kanban funcionan completamente. Leads, Empresas y
+Contactos continúan activos. Todavía NO hay: tareas globales, productos, cotizaciones,
+ventas, tickets, campañas, automatizaciones, reportes ejecutivos, forecast completo,
+API ni integraciones.

@@ -8,12 +8,14 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadConversionController;
+use App\Http\Controllers\OpportunityController;
+use App\Http\Controllers\OpportunityStageController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| NexusCRM Fase 4 — Leads + conversión (auth+active, Policies por módulo)
+| NexusCRM Fase 5 — Oportunidades + pipeline + Kanban (Policies por módulo)
 */
 
 // Landing pública mínima (conserva GET / 200 de Fase 1).
@@ -74,9 +76,18 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('leads/{lead}/convert', [LeadConversionController::class, 'store'])
         ->name('leads.convert.store');
 
+    // Oportunidades + pipeline comercial + Kanban (Fase 5). Kanban antes del
+    // resource para que {opportunity} no capture "kanban".
+    Route::get('opportunities/kanban', [OpportunityController::class, 'kanban'])
+        ->name('opportunities.kanban');
+    Route::resource('opportunities', OpportunityController::class);
+    Route::delete('opportunities/{opportunity}/tags/{tag}', [OpportunityController::class, 'detachTag'])
+        ->name('opportunities.tags.detach');
+    Route::patch('opportunities/{opportunity}/stage', [OpportunityStageController::class, 'update'])
+        ->name('opportunities.stage.update');
+
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([
-        'opportunities' => 'Oportunidades',
         'tasks' => 'Tareas',
         'activities' => 'Actividades',
         'teams' => 'Equipos',

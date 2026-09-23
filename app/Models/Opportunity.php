@@ -23,6 +23,14 @@ class Opportunity extends Model
         'company_id', 'contact_id', 'lead_id',
     ];
 
+    public const STATUSES = ['open', 'won', 'lost'];
+
+    public const CURRENCIES = ['USD', 'COP', 'EUR', 'MXN'];
+
+    public const DEFAULT_CURRENCY = 'USD';
+
+    public const SORTABLE = ['name', 'amount', 'probability', 'expected_close_date', 'created_at', 'status'];
+
     protected function casts(): array
     {
         return [
@@ -90,5 +98,120 @@ class Opportunity extends Model
     public function tasks(): MorphMany
     {
         return $this->morphMany(Task::class, 'taskable');
+    }
+
+    public function getWeightedAmountAttribute(): ?string
+    {
+        if ($this->amount === null || $this->probability === null) {
+            return null;
+        }
+
+        return bcmul((string) $this->amount, bcdiv((string) $this->probability, '100', 6), 2);
+    }
+
+    public function isClosed(): bool
+    {
+        return in_array($this->status, ['won', 'lost'], true);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    public function scopeSearch($query, ?string $term)
+    {
+        if (blank($term)) {
+            return $query;
+        }
+
+        $term = mb_strtolower(trim($term));
+
+        return $query->where(function ($q) use ($term) {
+            $q->whereRaw('LOWER(opportunities.name) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(opportunities.description) LIKE ?', ["%{$term}%"])
+                ->orWhereHas('company', function ($cq) use ($term) {
+                    $cq->whereRaw('LOWER(trade_name) LIKE ?', ["%{$term}%"])
+                        ->orWhereRaw('LOWER(legal_name) LIKE ?', ["%{$term}%"]);
+                })
+                ->orWhereHas('contact', function ($cq) use ($term) {
+                    $cq->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
+                });
+        });
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    public function scopeStatus($query, ?string $status)
+    {
+        if (blank($status)) {
+            return $query;
+        }
+
+        return $query->where('opportunities.status', $status);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    public function scopePipeline($query, mixed $pipelineId)
+    {
+        if (blank($pipelineId)) {
+            return $query;
+        }
+
+        return $query->where('opportunities.pipeline_id', $pipelineId);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    public function scopeStage($query, mixed $stageId)
+    {
+        if (blank($stageId)) {
+            return $query;
+        }
+
+        return $query->where('opportunities.pipeline_stage_id', $stageId);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    public function scopeOwnedBy($query, mixed $ownerId)
+    {
+        if (blank($ownerId)) {
+            return $query;
+        }
+
+        return $query->where('opportunities.owner_id', $ownerId);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    public function scopeForCompany($query, mixed $companyId)
+    {
+        if (blank($companyId)) {
+            return $query;
+        }
+
+        return $query->where('opportunities.company_id', $companyId);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    public function scopeAmountBetween($query, mixed $min, mixed $max)
+    {
+        if (! blank($min)) {
+            $query->where('opportunities.amount', '>=', $min);
+        }
+
+        if (! blank($max)) {
+            $query->where('opportunities.amount', '<=', $max);
+        }
+
+        return $query;
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    public function scopeCloseBetween($query, mixed $from, mixed $to)
+    {
+        if (! blank($from)) {
+            $query->whereDate('opportunities.expected_close_date', '>=', $from);
+        }
+
+        if (! blank($to)) {
+            $query->whereDate('opportunities.expected_close_date', '<=', $to);
+        }
+
+        return $query;
     }
 }
