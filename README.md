@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 11: motor interno de automatizaciones (event-driven, sin código arbitrario ni envíos).
+CRM empresarial web construido con Laravel. Fase 12: dashboard ejecutivo + reportes + forecast ponderado (sin IA, sin FX, sin exports).
 
 ## Stack
 
@@ -504,10 +504,86 @@ clasificación. No existen métricas reales de delivery/open/click.
   XSS/edición), masivos (elegibles/unsubscribed/límite 500), IDOR ×5, query
   string, Consulta read-only, supervisor mismo equipo.
 
-## Alcance actual (Fase 11)
+## Alcance actual (Fase 12)
 
-RBAC + DataScope activos también en automatizaciones. Sin scheduled triggers,
-colas, webhooks, API, reportes, IA ni proveedores reales. Fase 12 no iniciada.
+Dashboard ejecutivo + centro de reportes + forecast ponderado, todo con RBAC +
+DataScope. Sin exports (Fase 13), sin FX, sin IA, sin snapshots de forecast,
+sin vistas materializadas, sin caché compartida. Fase 13 no iniciada.
+
+## Fase 12 — Dashboard ejecutivo + reportes + forecast
+
+Todo reporte parte de query scoped → filtros → agregación SQL → presentación
+(nunca get() + filter() en PHP; DataScope va ANTES de count/sum/avg/groupBy).
+
+- Arquitectura (`app/Services/Reports/`): `ReportFilters` (preset o fechas
+  explícitas, default este mes, máx. 5 años, owner contra `filterableUsers`),
+  `ReportFilterRequest`, `ExecutiveDashboardService`, `SalesReportService`,
+  `PipelineReportService`, `LeadReportService`, `QuoteReportService`,
+  `InvoiceReportService`, `SupportReportService`, `CampaignReportService`,
+  `AutomationReportService`, `ForecastService`. Controllers delgados
+  (uno por reporte + `ReportController@index` + `ForecastController`).
+- Permisos idempotentes: `reports.view` (centro + 8 reportes, siempre ADEMÁS del
+  permiso del módulo) y `reports.forecast` (+ `opportunities.view`). Rutas bajo
+  `auth`+`active`; reportes son GET read-only (Consulta con `reports.view` ve
+  scoped). Dashboard no exige permisos nuevos (compatibilidad total).
+- Filtros globales: Hoy / 7d / 30d / Este mes (default) / Mes anterior /
+  Trimestre / Año / Personalizado; `from<=to`, fechas `Y-m-d`, owner validado
+  (`?owner_id` fuera de scope → 422, nunca amplía). Timezone: `config('app.timezone')`
+  (UTC), sin cambios globales.
+- Dashboard: conserva todos los widgets previos + bloque RESUMEN EJECUTIVO
+  (comercial, operación, 4 mini-charts) con filtros de rango/responsable.
+- KPIs: pipeline abierto (`SUM(amount*probability/100)` numeric, sin won/lost);
+  won por `actual_close_date`; ventas confirmed+completed por `sale_date`
+  (cancelled separado); facturación INTERNA (emitida/pagada/pendiente =
+  no paid ni cancelled/vencida, etiqueta no fiscal); leads
+  (conversion = converted/created en rango, "—" sin base); quotes
+  (acceptance = accepted/(accepted+rejected), expired calculada); tickets
+  (snapshot actual open/pending/urgent/unassigned + tiempos medios con timestamps
+  reales, sin "SLA"); campañas (activas, miembros visibles, simuladas, finanzas
+  de referencia sin revenue generado); automatizaciones (activas, runs,
+  success = success/(success+failed)); tareas personales.
+- Comparativa vs período anterior de igual duración (tendencia `+x%`, "N/A" si
+  base cero, nunca INF/NaN). División por cero → "—"/"N/A" en todas las tasas.
+- Charts server-rendered sin librerías ni CDN (barras HTML + equivalente textual,
+  labels escapados, sin JSON embebido). Tendencia día (<=31d) / mes; pipeline por
+  etapa real; leads por source; tickets por estado (creados en rango, snapshot
+  etiquetado, sin historial fingido).
+- Drill-down a listados con filtros compatibles (`?status=`); el query string no
+  amplía DataScope (verificado en tests).
+- Reportes: `/reports` (tarjetas por permiso), `sales` (total/promedio por moneda,
+  tendencia, top owners/companies en alcance), `pipeline` (abierto, etapas,
+  buckets de cierre, estancadas >X días configurable 7–90, hecho observable),
+  `leads` (funnel, fuentes, owners, scores 0–24/25–49/50–74/75–100), `quotes`,
+  `invoices` (interna), `support` (flujo + snapshot + breakdowns),
+  `campaigns` (sin opens/CTR/delivery), `automations` (ratio, tendencia diaria,
+  top). Detalles paginados/limitados (top 10, stale 50).
+- Forecast (`/forecast`, default mes actual + 2): SOLO open con
+  `expected_close_date` en rango, ponderado por moneda, buckets mensuales, por
+  etapa y por responsable (scoped); sin fecha → sección de calidad separada;
+  won actual por `actual_close_date` como serie aparte. NO es IA ni predicción:
+  operacional ponderado, en vivo (sin snapshots, sin reconstrucción histórica),
+  solo lectura. Usa `probability` persistida (ya sincronizada desde stage).
+- Moneda: SIN FX; todo total agrupado POR moneda (pipeline, ventas, quotes,
+  invoices, forecast). Promedios por moneda. Nunca suma cruzada (tests).
+- Seguridad: agregados scoped (vendedor own, team, admin global, sin-rol own);
+  labels de owners/companies solo visibles; `99999999.99` ajeno no aparece en
+  HTML/KPIs/charts (test); sorting whitelist (existente); sin raw SQL con input
+  (bucket strategy por whitelist día/mes, driver PG/SQLite interno); XSS
+  escapado (`{{ }}`, `@json` no requerido al no haber JS).
+- Decimales: agregados numeric en PG, `bcdiv` en PHP, sin float. Sin cambios de
+  BD (30 migraciones; índices compuestos ya existentes cubren las agregaciones;
+  EXPLAIN confirma plan sano; sin materialized views, sin caché).
+- Performance smoke (rollback, sin ensuciar dev): 500 opportunities + 500 sales
+  + 500 tickets → dashboard 266ms/102 queries, pipeline 82ms/36, sales 70ms/30,
+  forecast 78ms/44. Sin N+1 (groupBy SQL).
+- Tests: `tests/Feature/PhaseTwelveTest` (26 tests): permisos, centro por módulo,
+  matrices vendor/supervisor/admin/sin-rol/consulta, owner IDOR, rangos + período
+  previo + inválidos, multi-moneda (sales/pipeline/forecast), pipeline exacto
+  (10000@60%=6000), stale/buckets, forecast (abierto/missing-date/permisos),
+  funnel y conversión, N/A sin base, acceptance 66.7%, outstanding/overdue,
+  medias con nulos, campañas sin métricas falsas + miembros scoped, ratio
+  automatizaciones, leak `99999999.99`, drill-down, XSS, dashboard compatible.
+- Exports (CSV/Excel/PDF) llegan en Fase 13: no implementados.
 
 ## Fase 11 — Motor de automatizaciones internas
 

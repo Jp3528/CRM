@@ -31,6 +31,94 @@
         </div>
     </x-card>
 
+    <x-card title="Resumen ejecutivo" subtitle="KPIs por tu alcance · {{ $reportFilters['date_from'] }} → {{ $reportFilters['date_to'] }}">
+        <x-report-filters :action="route('dashboard')" :filters="$reportFilters" :owners="$owners" />
+
+        @if ($executive['pipeline'] !== null)
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Comercial</p>
+            <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <x-kpi-card label="Pipeline abierto" :value="\App\Support\ReportFormat::count($executive['pipeline']['deals'])"
+                    href="{{ route('opportunities.index', ['status' => 'open']) }}" />
+                @foreach ($executive['pipeline']['by_currency'] as $currency => $row)
+                    <x-kpi-card :label="'Pipeline ' . $currency" :value="\App\Support\ReportFormat::money($row['amount'], $currency)"
+                        :secondary="'Ponderado ' . \App\Support\ReportFormat::money($row['weighted'], $currency)" />
+                @endforeach
+                <x-kpi-card label="Ganadas (rango)" :value="\App\Support\ReportFormat::count($executive['won']['deals'])"
+                    href="{{ route('opportunities.index', ['status' => 'won']) }}" note="Por fecha de cierre real" />
+                @foreach ($executive['won']['by_currency'] as $currency => $row)
+                    <x-kpi-card :label="'Ganado ' . $currency" :value="\App\Support\ReportFormat::money($row['amount'], $currency)"
+                        :trend="$row['trend']" />
+                @endforeach
+                @if ($executive['sales'] !== null)
+                    <x-kpi-card label="Ventas (rango)" :value="\App\Support\ReportFormat::count($executive['sales']['deals'])"
+                        href="{{ route('sales.index', ['status' => 'confirmed']) }}" note="Confirmadas + completadas" />
+                    @foreach ($executive['sales']['by_currency'] as $currency => $row)
+                        <x-kpi-card :label="'Ventas ' . $currency" :value="\App\Support\ReportFormat::money($row['total'], $currency)"
+                            :trend="$row['trend']" />
+                    @endforeach
+                @endif
+                @if ($executive['leads'] !== null)
+                    <x-kpi-card label="Leads creados" :value="\App\Support\ReportFormat::count($executive['leads']['created'])"
+                        href="{{ route('leads.index') }}" />
+                    <x-kpi-card label="Conversión" :value="\App\Support\ReportFormat::percent($executive['leads']['conversion_rate'])"
+                        note="Convertidos / creados" />
+                @endif
+                @if ($executive['quotes'] !== null)
+                    <x-kpi-card label="Cotizaciones" :value="\App\Support\ReportFormat::count($executive['quotes']['created'])"
+                        href="{{ route('quotes.index') }}" />
+                    <x-kpi-card label="Aceptación" :value="\App\Support\ReportFormat::percent($executive['quotes']['acceptance_rate'])"
+                        note="Aceptadas / decididas" />
+                @endif
+            </div>
+        @endif
+
+        @if ($executive['tickets'] !== null || $executive['campaigns'] !== null || $executive['automations'] !== null)
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Operación</p>
+            <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                @if ($executive['tickets'] !== null)
+                    <x-kpi-card label="Tickets abiertos" :value="\App\Support\ReportFormat::count($executive['tickets']['open_snapshot'])"
+                        href="{{ route('tickets.index', ['status' => 'open']) }}" note="Snapshot actual" />
+                    <x-kpi-card label="Resolución media" :value="\App\Support\ReportFormat::duration($executive['tickets']['avg_resolution_seconds'])" />
+                @endif
+                @if ($executive['campaigns'] !== null)
+                    <x-kpi-card label="Campañas activas" :value="\App\Support\ReportFormat::count($executive['campaigns']['active'])"
+                        href="{{ route('campaigns.index', ['status' => 'active']) }}" />
+                    <x-kpi-card label="Simuladas (rango)" :value="\App\Support\ReportFormat::count($executive['campaigns']['simulated_in_range'])"
+                        note="Comunicaciones registradas" />
+                @endif
+                @if ($executive['automations'] !== null)
+                    <x-kpi-card label="Automatizaciones activas" :value="\App\Support\ReportFormat::count($executive['automations']['active'])"
+                        href="{{ route('automations.index', ['status' => 'active']) }}" />
+                    <x-kpi-card label="Runs fallidos" :value="\App\Support\ReportFormat::count($executive['automations']['by_status']['failed'] ?? 0)" />
+                @endif
+                @if ($executive['invoices'] !== null)
+                    <x-kpi-card label="Facturado (rango)" :value="collect($executive['invoices']['invoiced_by_currency'])->map(fn ($v, $c) => \App\Support\ReportFormat::money($v, $c))->implode(' · ') ?: '—'"
+                        note="Facturación interna" />
+                    <x-kpi-card label="Pendiente" :value="collect($executive['invoices']['outstanding_by_currency'])->map(fn ($v, $c) => \App\Support\ReportFormat::money($v, $c))->implode(' · ') ?: '—'" />
+                @endif
+            </div>
+        @endif
+
+        <div class="grid gap-4 lg:grid-cols-2">
+            @if (! empty($executive['charts']['sales_trend']))
+                <x-bar-chart title="Tendencia de ventas" subtitle="Últimos períodos (mayor moneda)"
+                    :rows="collect($executive['charts']['sales_trend'])->map(fn ($b) => ['label' => $b['label'], 'value' => collect($b['totals'])->map(fn ($v) => (float) $v)->max() ?? 0, 'display' => collect($b['totals'])->map(fn ($v, $c) => \App\Support\ReportFormat::money($v, $c))->implode(' · ') ?: '—'])->all()" />
+            @endif
+            @if (! empty($executive['charts']['pipeline_stages']))
+                <x-bar-chart title="Pipeline por etapa" subtitle="Abiertas en tu alcance"
+                    :rows="collect($executive['charts']['pipeline_stages'])->take(8)->map(fn ($s) => ['label' => $s['stage'], 'value' => $s['deals'], 'display' => $s['deals']])->all()" />
+            @endif
+            @if (! empty($executive['charts']['leads_by_source']))
+                <x-bar-chart title="Leads por origen" subtitle="Creados en el rango"
+                    :rows="collect($executive['charts']['leads_by_source'])->map(fn ($s) => ['label' => ucfirst($s['source']), 'value' => $s['total'], 'display' => $s['total']])->all()" />
+            @endif
+            @if (! empty($executive['charts']['tickets_by_status']))
+                <x-bar-chart title="Tickets por estado" subtitle="Creados en el rango"
+                    :rows="collect($executive['charts']['tickets_by_status'])->map(fn ($v, $k) => ['label' => ucfirst($k), 'value' => $v, 'display' => $v])->all()" />
+            @endif
+        </div>
+    </x-card>
+
     <div class="grid gap-4 md:grid-cols-2">
         <x-card title="Accesos rápidos" subtitle="Solo lo que tus permisos permiten">
             <ul class="space-y-2 text-sm">
@@ -51,6 +139,8 @@
                 @can('templates.view')<li><a class="text-slate-700 hover:underline" href="{{ route('templates.index') }}">· Plantillas</a></li>@endcan
                 @can('communications.view')<li><a class="text-slate-700 hover:underline" href="{{ route('communications.index') }}">· Comunicaciones</a></li>@endcan
                 @can('automations.view')<li><a class="text-slate-700 hover:underline" href="{{ route('automations.index') }}">· Automatizaciones</a></li>@endcan
+                @can('reports.view')<li><a class="text-slate-700 hover:underline" href="{{ route('reports.index') }}">· Reportes</a></li>@endcan
+                @can('reports.forecast')<li><a class="text-slate-700 hover:underline" href="{{ route('forecast.index') }}">· Forecast</a></li>@endcan
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan
                 <li><a class="text-slate-700 hover:underline" href="{{ route('profile.edit') }}">· Mi perfil</a></li>
             </ul>

@@ -60,6 +60,9 @@ class PermissionSeeder extends Seeder
         ['name' => 'automations.update', 'label' => 'Update Automations', 'description' => 'Permite editar automatizaciones pausadas o en borrador.', 'group' => 'automations'],
         ['name' => 'automations.delete', 'label' => 'Delete Automations', 'description' => 'Permite eliminar automatizaciones.', 'group' => 'automations'],
         ['name' => 'automations.execute', 'label' => 'Execute Automations', 'description' => 'Permite activar, pausar y probar automatizaciones.', 'group' => 'automations'],
+        // Fase 12 — Reportes y forecast (solo lectura; el alcance lo da DataScope).
+        ['name' => 'reports.view', 'label' => 'View Reports', 'description' => 'Permite ver el centro de reportes.', 'group' => 'reports'],
+        ['name' => 'reports.forecast', 'label' => 'View Forecast', 'description' => 'Permite ver el forecast comercial ponderado.', 'group' => 'reports'],
     ];
 
     public function run(): void

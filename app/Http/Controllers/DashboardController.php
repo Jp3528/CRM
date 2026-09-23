@@ -12,6 +12,9 @@ use App\Models\Quote;
 use App\Models\Sale;
 use App\Models\Task;
 use App\Models\Ticket;
+use App\Services\Reports\ExecutiveDashboardService;
+use App\Services\Reports\ReportFilters;
+use App\Support\DataScope;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -20,6 +23,18 @@ class DashboardController extends Controller
     public function __invoke(Request $request): View
     {
         $user = $request->user()->loadMissing(['team', 'roles', 'permissions']);
+
+        // Filtros ejecutivos opcionales (default: este mes). No rompen el
+        // acceso actual: cualquier usuario autenticado ve su dashboard.
+        $request->validate([
+            'preset' => ['nullable', 'string', 'max:20'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'owner_id' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $reportFilters = ReportFilters::resolve($request->only(['preset', 'date_from', 'date_to', 'owner_id']), $user);
+        $executive = (new ExecutiveDashboardService($user, $reportFilters))->build();
 
         // Widgets comerciales moderados (solo productividad personal, sin analítica).
         $tasksToday = collect();
@@ -131,6 +146,10 @@ class DashboardController extends Controller
                     ->latest()->limit(5)->get()
                 : collect(),
             'canSeeAutomations' => $user->can('viewAny', Automation::class),
+            // Fase 12 — KPIs ejecutivos (por módulo + DataScope, con filtros).
+            'executive' => $executive,
+            'reportFilters' => $reportFilters->forView(),
+            'owners' => DataScope::filterableUsers($user, $reportFilters->ownerId),
         ]);
     }
 }

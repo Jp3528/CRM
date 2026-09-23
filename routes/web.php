@@ -5,28 +5,38 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\AutomationController;
+use App\Http\Controllers\AutomationReportController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\CampaignMemberController;
+use App\Http\Controllers\CampaignReportController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceReportController;
 use App\Http\Controllers\InvoiceStatusController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadConversionController;
+use App\Http\Controllers\LeadReportController;
 use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\OpportunityStageController;
+use App\Http\Controllers\PipelineReportController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuoteReportController;
 use App\Http\Controllers\QuoteStatusController;
 use App\Http\Controllers\QuoteToSaleController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SaleStatusController;
 use App\Http\Controllers\SaleToInvoiceController;
+use App\Http\Controllers\SalesReportController;
+use App\Http\Controllers\SupportReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskStatusController;
 use App\Http\Controllers\TicketController;
@@ -212,6 +222,19 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->name('automations.dry-run');
     Route::get('automations/{automation}/runs/{run}', [AutomationController::class, 'showRun'])
         ->name('automations.runs.show');
+
+    // Reportes ejecutivos + forecast (Fase 12). Solo lectura, DataScope en
+    // cada query, montos por moneda (sin FX). Sin exports (Fase 13).
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/sales', SalesReportController::class)->name('reports.sales');
+    Route::get('reports/pipeline', PipelineReportController::class)->name('reports.pipeline');
+    Route::get('reports/leads', LeadReportController::class)->name('reports.leads');
+    Route::get('reports/quotes', QuoteReportController::class)->name('reports.quotes');
+    Route::get('reports/invoices', InvoiceReportController::class)->name('reports.invoices');
+    Route::get('reports/support', SupportReportController::class)->name('reports.support');
+    Route::get('reports/campaigns', CampaignReportController::class)->name('reports.campaigns');
+    Route::get('reports/automations', AutomationReportController::class)->name('reports.automations');
+    Route::get('forecast', ForecastController::class)->name('forecast.index');
 
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([
