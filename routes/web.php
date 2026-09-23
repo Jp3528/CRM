@@ -3,17 +3,19 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| NexusCRM Fase 2 — Rutas base de acceso y navegación
+| NexusCRM Fase 3 — Empresas y Contactos (primer módulo funcional)
 |--------------------------------------------------------------------------
-| guest        : login + recuperación (arquitectura lista, mailer log/array)
-| auth+active  : dashboard, perfil, placeholders de módulos (sin CRUD)
-| admin        : ejemplo de autorización backend real (users.view)
+| guest        : login + recuperación (mailer log/array)
+| auth+active  : dashboard, perfil, companies.*, contacts.* (Policies),
+|                placeholders futuros, admin users.view
 */
 
 // Landing pública mínima (conserva GET / 200 de Fase 1).
@@ -54,10 +56,17 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
 
+    // Primer módulo CRM funcional (Fase 3). Autorización vía Policies.
+    Route::resource('companies', CompanyController::class);
+    Route::delete('companies/{company}/tags/{tag}', [CompanyController::class, 'detachTag'])
+        ->name('companies.tags.detach');
+
+    Route::resource('contacts', ContactController::class);
+    Route::delete('contacts/{contact}/tags/{tag}', [ContactController::class, 'detachTag'])
+        ->name('contacts.tags.detach');
+
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([
-        'companies' => 'Empresas',
-        'contacts' => 'Contactos',
         'leads' => 'Leads',
         'opportunities' => 'Oportunidades',
         'tasks' => 'Tareas',

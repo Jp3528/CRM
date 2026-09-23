@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 2: autenticación + RBAC operativo + estructura visual base.
+CRM empresarial web construido con Laravel. Fase 3: Empresas + Contactos (primer módulo funcional).
 
 ## Stack
 
@@ -94,6 +94,35 @@ Layout empresarial (`layouts/app`, `layouts/guest`, sidebar, topbar, breadcrumbs
 - Componentes Blade: button, input, label, input-error, card, badge, flash (success/error/warning/info), breadcrumbs, modal base.
 - Errores coherentes `403`/`404` sin stack traces.
 
+## Fase 3 — Empresas y Contactos (primer módulo CRM funcional)
+
+CRUD completo con Policies (`CompanyPolicy`, `ContactPolicy` → permisos
+`companies.*` / `contacts.*`, ya existentes en `PermissionSeeder`, sin duplicados;
+Superadministrador con acceso total vía RBAC centralizado):
+
+- Listados con búsqueda backend, filtros combinables (estado, industria/país/empresa/departamento,
+  responsable), ordenamiento con whitelist (`trade_name/first_name`, `status`, `created_at`),
+  paginación de 15 con query string preservado, `with()`/`withCount()` (sin N+1).
+- Empresas: `trade_name, legal_name, tax_id (unique DB), email, phone, website, industry,
+  company_size, address, city, region, country, postal_code, status (active/inactive),
+  owner_id, notes`. Búsqueda: nombre comercial, razón social, email, teléfono, NIT.
+- Contactos: `first_name, last_name, email, phone, mobile, job_title, department,
+  company_id, owner_id, status, notes`. Búsqueda: nombres, email, teléfonos, cargo +
+  nombre de empresa vía relación. Filtros: empresa, estado, responsable, departamento.
+- Crear/editar con `Store/UpdateCompanyRequest` y `Store/UpdateContactRequest`;
+  `owner_id` con select de usuarios activos (se preserva el existente aunque esté inactivo).
+- Soft deletes con confirmación (`confirm()` Alpine-inline); al borrar empresa los contactos se conservan.
+- Fichas: datos principales, comercial, contacto/ubicación, responsable, estado, notas,
+  tags, contactos asociados (con enlace y creación directa `contacts/create?company_id=`),
+  actividad reciente (10 últimas, tipo/título/descripción/usuario/fecha), fechas created/updated.
+- Tags polimórficos (`tags`/`taggables` Fase 1): mostrar, asignar existentes, crear por texto
+  (coma, sin duplicados por slug), quitar (`DELETE companies|contacts/{id}/tags/{tag}`, requiere update).
+- Rutas resource `companies.*` / `contacts.*` (+ `*.tags.detach`) bajo `auth`+`active`;
+  placeholders de Fase 2 para empresas/contactos eliminados; leads/oportunidades/tareas/etc. intactos.
+- Sidebar: Empresas y Contactos ya funcionales (sin badge "Próx."); resto sigue como placeholder.
+- Componentes nuevos: `empty-state`, `status-badge` (reutiliza Fase 2: card, button, badge, flash, breadcrumbs).
+- Flash: "Empresa/Contacto creada(o)/actualizada(o)/eliminada(o) correctamente." Errores 403/404/422 estándar.
+
 ## Tests
 
 ```sh
@@ -104,6 +133,10 @@ Cubre Fase 1 (arranque, 20 tablas, roles, pipeline Ventas, factories y relacione
 + Fase 2 (`tests/Feature/PhaseTwoTest`): login activo/inválido/inactivo, logout,
 protegidas redirigen, RBAC, Superadministrador, 403 sin permiso, cambio de contraseña,
 perfil requiere auth, inactivo bloqueado, sin registro público, reset renderiza.
++ Fase 3 (`tests/Feature/PhaseThreeTest`, 25 tests): CRUD empresas/contactos, validación,
+403 sin permiso (7 operaciones c/u), soft delete (contactos de empresa intactos),
+búsqueda (incl. por empresa), filtros combinados, paginación 15, relación
+empresa↔contactos, tags asignar/crear/quitar, actividad visible.
 
 ## Frontend
 
@@ -111,8 +144,8 @@ perfil requiere auth, inactivo bloqueado, sin registro público, reset renderiza
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 2)
+## Alcance actual (Fase 3)
 
-Base de acceso y navegación. Todavía NO hay: CRUD de empresas/contactos, leads,
-oportunidades, Kanban, tareas funcionales, productos, cotizaciones, ventas, tickets,
-campañas, reportes, API ni integraciones.
+Empresas + Contactos funcionan completamente. Todavía NO hay: Leads funcional,
+Oportunidades, Kanban, tareas completas, productos, cotizaciones, ventas, tickets,
+campañas, automatizaciones, reportes, API ni integraciones.

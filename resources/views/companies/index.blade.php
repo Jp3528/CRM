@@ -1,0 +1,93 @@
+@extends('layouts.app', ['header' => 'Empresas', 'subheader' => 'Primer módulo CRM funcional'])
+
+@section('title', 'Empresas')
+
+@section('breadcrumbs')
+    <x-breadcrumbs :items="[['label' => 'Dashboard', 'url' => route('dashboard')], ['label' => 'Empresas']]" />
+@endsection
+
+@section('content')
+    <x-card title="Empresas" subtitle="{{ $companies->total() }} registro(s)">
+        <form method="GET" action="{{ route('companies.index') }}" class="mb-4 grid gap-2 md:grid-cols-6">
+            <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar nombre, NIT, email, teléfono…"
+                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
+            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <option value="">Todos los estados</option>
+                @foreach ($statuses as $s)<option value="{{ $s }}" @selected($filters['status'] === $s)>{{ ucfirst($s) }}</option>@endforeach
+            </select>
+            <select name="industry" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <option value="">Todas las industrias</option>
+                @foreach ($industries as $i)<option value="{{ $i }}" @selected($filters['industry'] === $i)>{{ $i }}</option>@endforeach
+            </select>
+            <select name="country" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <option value="">Todos los países</option>
+                @foreach ($countries as $c)<option value="{{ $c }}" @selected($filters['country'] === $c)>{{ $c }}</option>@endforeach
+            </select>
+            <select name="owner_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <option value="">Todos los responsables</option>
+                @foreach ($owners as $o)<option value="{{ $o->id }}" @selected((string) $filters['owner_id'] === (string) $o->id)>{{ $o->name }}</option>@endforeach
+            </select>
+            <div class="flex gap-2 md:col-span-6">
+                <x-button>Buscar</x-button>
+                <a href="{{ route('companies.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
+                @can('create', App\Models\Company::class)
+                    <a href="{{ route('companies.create') }}" class="ml-auto inline-flex items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Nueva empresa</a>
+                @endcan
+            </div>
+        </form>
+
+        @if ($companies->isEmpty())
+            <x-empty-state title="No hay empresas registradas." message="Crea la primera empresa para empezar a gestionar tu CRM."
+                :action-url="auth()->user()->can('create', App\Models\Company::class) ? route('companies.create') : null" action-label="Nueva empresa" />
+        @else
+            <div class="overflow-x-auto rounded-md border border-slate-200">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                        <tr>
+                            <th class="px-4 py-2 text-left">
+                                <a href="{{ route('companies.index', array_merge(request()->query(), ['sort' => 'trade_name', 'direction' => $filters['sort'] === 'trade_name' && $filters['direction'] === 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-slate-800">Nombre comercial{{ $filters['sort'] === 'trade_name' ? ($filters['direction'] === 'asc' ? ' ↑' : ' ↓') : '' }}</a>
+                            </th>
+                            <th class="px-4 py-2 text-left">Industria</th>
+                            <th class="px-4 py-2 text-left">Contacto</th>
+                            <th class="px-4 py-2 text-left">Ciudad / País</th>
+                            <th class="px-4 py-2 text-left">Responsable</th>
+                            <th class="px-4 py-2 text-left">
+                                <a href="{{ route('companies.index', array_merge(request()->query(), ['sort' => 'status', 'direction' => $filters['sort'] === 'status' && $filters['direction'] === 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-slate-800">Estado{{ $filters['sort'] === 'status' ? ($filters['direction'] === 'asc' ? ' ↑' : ' ↓') : '' }}</a>
+                            </th>
+                            <th class="px-4 py-2 text-left">Contactos</th>
+                            <th class="px-4 py-2 text-left">
+                                <a href="{{ route('companies.index', array_merge(request()->query(), ['sort' => 'created_at', 'direction' => $filters['sort'] === 'created_at' && $filters['direction'] === 'asc' ? 'desc' : 'asc'])) }}" class="hover:text-slate-800">Creada{{ $filters['sort'] === 'created_at' ? ($filters['direction'] === 'asc' ? ' ↑' : ' ↓') : '' }}</a>
+                            </th>
+                            <th class="px-4 py-2 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        @foreach ($companies as $company)
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-2 font-medium text-slate-900">
+                                    <a href="{{ route('companies.show', $company) }}" class="hover:underline">{{ $company->trade_name }}</a>
+                                    @if ($company->legal_name)<span class="block text-xs font-normal text-slate-500">{{ $company->legal_name }}</span>@endif
+                                </td>
+                                <td class="px-4 py-2 text-slate-600">{{ $company->industry ?? '—' }}</td>
+                                <td class="px-4 py-2 text-slate-600">
+                                    @if ($company->email)<span class="block">{{ $company->email }}</span>@endif
+                                    {{ $company->phone ?? ($company->email ? '' : '—') }}
+                                </td>
+                                <td class="px-4 py-2 text-slate-600">{{ trim(($company->city ?? '').($company->country ? ' / '.$company->country : ''), ' /') ?: '—' }}</td>
+                                <td class="px-4 py-2 text-slate-600">{{ $company->owner?->name ?? '—' }}</td>
+                                <td class="px-4 py-2"><x-status-badge :status="$company->status" /></td>
+                                <td class="px-4 py-2 text-slate-600">{{ $company->contacts_count }}</td>
+                                <td class="px-4 py-2 text-slate-500">{{ $company->created_at->format('Y-m-d') }}</td>
+                                <td class="px-4 py-2 text-right">
+                                    <a href="{{ route('companies.show', $company) }}" class="text-slate-600 hover:underline">Ver</a>
+                                    @can('update', $company) · <a href="{{ route('companies.edit', $company) }}" class="text-slate-600 hover:underline">Editar</a>@endcan
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4">{{ $companies->links() }}</div>
+        @endif
+    </x-card>
+@endsection

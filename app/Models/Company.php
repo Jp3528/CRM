@@ -16,6 +16,10 @@ class Company extends Model
     /** @use HasFactory<CompanyFactory> */
     use HasFactory, SoftDeletes;
 
+    public const STATUSES = ['active', 'inactive'];
+
+    public const SORTABLE = ['trade_name', 'status', 'created_at'];
+
     protected $fillable = [
         'trade_name', 'legal_name', 'tax_id', 'email', 'phone', 'website',
         'industry', 'company_size', 'address', 'city', 'region', 'country',
@@ -56,5 +60,63 @@ class Company extends Model
     public function tasks(): MorphMany
     {
         return $this->morphMany(Task::class, 'taskable');
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    public function scopeSearch($query, ?string $term)
+    {
+        if (blank($term)) {
+            return $query;
+        }
+
+        $term = mb_strtolower(trim($term));
+
+        return $query->where(function ($q) use ($term) {
+            $q->whereRaw('LOWER(trade_name) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(legal_name) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(email) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(phone) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(tax_id) LIKE ?', ["%{$term}%"]);
+        });
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    public function scopeStatus($query, ?string $status)
+    {
+        if (blank($status)) {
+            return $query;
+        }
+
+        return $query->where('status', $status);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    public function scopeIndustry($query, ?string $industry)
+    {
+        if (blank($industry)) {
+            return $query;
+        }
+
+        return $query->where('industry', $industry);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    public function scopeCountry($query, ?string $country)
+    {
+        if (blank($country)) {
+            return $query;
+        }
+
+        return $query->where('country', $country);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    public function scopeOwnedBy($query, mixed $ownerId)
+    {
+        if (blank($ownerId)) {
+            return $query;
+        }
+
+        return $query->where('owner_id', $ownerId);
     }
 }

@@ -16,6 +16,10 @@ class Contact extends Model
     /** @use HasFactory<ContactFactory> */
     use HasFactory, SoftDeletes;
 
+    public const STATUSES = ['active', 'inactive'];
+
+    public const SORTABLE = ['first_name', 'status', 'created_at'];
+
     protected $fillable = [
         'first_name', 'last_name', 'email', 'phone', 'mobile',
         'job_title', 'department', 'company_id', 'owner_id', 'status', 'notes',
@@ -55,5 +59,72 @@ class Contact extends Model
     public function tasks(): MorphMany
     {
         return $this->morphMany(Task::class, 'taskable');
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim("{$this->first_name} {$this->last_name}");
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    public function scopeSearch($query, ?string $term)
+    {
+        if (blank($term)) {
+            return $query;
+        }
+
+        $term = mb_strtolower(trim($term));
+
+        return $query->where(function ($q) use ($term) {
+            $q->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(email) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(phone) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(mobile) LIKE ?', ["%{$term}%"])
+                ->orWhereRaw('LOWER(job_title) LIKE ?', ["%{$term}%"])
+                ->orWhereHas('company', function ($cq) use ($term) {
+                    $cq->whereRaw('LOWER(trade_name) LIKE ?', ["%{$term}%"]);
+                });
+        });
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    public function scopeStatus($query, ?string $status)
+    {
+        if (blank($status)) {
+            return $query;
+        }
+
+        return $query->where('contacts.status', $status);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    public function scopeForCompany($query, mixed $companyId)
+    {
+        if (blank($companyId)) {
+            return $query;
+        }
+
+        return $query->where('contacts.company_id', $companyId);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    public function scopeDepartment($query, ?string $department)
+    {
+        if (blank($department)) {
+            return $query;
+        }
+
+        return $query->where('contacts.department', $department);
+    }
+
+    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    public function scopeOwnedBy($query, mixed $ownerId)
+    {
+        if (blank($ownerId)) {
+            return $query;
+        }
+
+        return $query->where('contacts.owner_id', $ownerId);
     }
 }
