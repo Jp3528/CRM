@@ -141,41 +141,59 @@ final class AutomationRunner
             throw $e;
         }
 
-        // Checks dinámicos (nunca autoridad histórica).
-        $skipReason = $this->precheck($automation, $subject);
+        try {
+            $currentAutomation = $this->currentAutomation($automation);
 
-        if ($skipReason !== null) {
-            $this->finishSkipped($run, $automation, $skipReason);
-
-            return;
-        }
-
-        $conditions = $automation->conditions ?? [];
-        $fieldTypes = AutomationCatalog::fieldsForTrigger($trigger);
-
-        if ($conditions !== [] && ! ConditionEvaluator::passes($conditions, $fieldTypes, $context)) {
-            $this->finishSkipped($run, $automation, 'conditions_not_met', ['conditions' => count($conditions)]);
-
-            return;
-        }
-
-        // Recheck funcional por acción antes de ejecutar.
-        foreach ($automation->actions ?? [] as $action) {
-            $required = $this->executor->requiredPermission($action['type'] ?? '');
-
-            if ($required && ! $automation->owner->hasPermission($required)) {
-                $this->finishSkipped($run, $automation, 'permission_denied', ['permission' => $required]);
+            if (! $currentAutomation || $currentAutomation->status !== 'active') {
+                $this->finishSkipped($run, $automation, 'automation_not_active');
 
                 return;
             }
-        }
 
-        try {
+            $automation = $currentAutomation;
+
+            // Checks dinámicos (nunca autoridad histórica).
+            $skipReason = $this->precheck($automation, $subject);
+
+            if ($skipReason !== null) {
+                $this->finishSkipped($run, $automation, $skipReason);
+
+                return;
+            }
+
+            $conditions = $automation->conditions ?? [];
+            $fieldTypes = AutomationCatalog::fieldsForTrigger($trigger);
+
+            if ($conditions !== [] && ! ConditionEvaluator::passes($conditions, $fieldTypes, $context)) {
+                $this->finishSkipped($run, $automation, 'conditions_not_met', ['conditions' => count($conditions)]);
+
+                return;
+            }
+
+            // Recheck funcional por acción antes de ejecutar.
+            foreach ($automation->actions ?? [] as $action) {
+                $required = $this->executor->requiredPermission($action['type'] ?? '');
+
+                if ($required && ! $automation->owner->hasPermission($required)) {
+                    $this->finishSkipped($run, $automation, 'permission_denied', ['permission' => $required]);
+
+                    return;
+                }
+            }
+
             $results = DB::transaction(function () use ($automation, $subject, $subjectKey, $triggeredBy) {
                 $out = [];
 
                 foreach ($automation->actions ?? [] as $action) {
-                    $out[] = $this->executor->execute($action, $automation, $subject->fresh() ?? $subject, $subjectKey, $triggeredBy);
+                    $freshSubject = $subject->fresh();
+
+                    if (! $freshSubject || (method_exists($freshSubject, 'trashed') && $freshSubject->trashed())) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'subject' => 'Registro no disponible.',
+                        ]);
+                    }
+
+                    $out[] = $this->executor->execute($action, $automation, $freshSubject, $subjectKey, $triggeredBy);
                 }
 
                 return $out;
@@ -201,6 +219,14 @@ final class AutomationRunner
         }
 
         $automation->update(['last_run_at' => now()]);
+    }
+
+    private function currentAutomation(Automation $automation): ?Automation
+    {
+        return Automation::query()
+            ->with(['owner' => fn ($q) => $q->with('roles')])
+            ->whereKey($automation->id)
+            ->first();
     }
 
     /**

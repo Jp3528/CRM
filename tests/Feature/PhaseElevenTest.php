@@ -878,6 +878,27 @@ class PhaseElevenTest extends TestCase
         $this->assertTrue(ConditionEvaluator::evaluate('decimal', 'less_than', '9999.99', '10000'));
         $this->assertFalse(ConditionEvaluator::evaluate('decimal', 'greater_or_equal', '9999.99', '10000'));
         $this->assertTrue(ConditionEvaluator::evaluate('decimal', 'greater_or_equal', '10000.00', '10000'));
+        $this->assertFalse(ConditionEvaluator::evaluate('decimal', 'greater_or_equal', null, '10000'));
+        $this->assertFalse(ConditionEvaluator::evaluate('decimal', 'less_or_equal', null, '10000'));
+        $this->assertFalse(ConditionEvaluator::evaluate('decimal', 'equals', 'no-numero', '0'));
+    }
+
+    public function test_missing_decimal_condition_value_skips(): void
+    {
+        $user = $this->makeUser($this->fullPerms(), null, ['Vendedor']);
+        $this->makeAutomation($user, [
+            'trigger_type' => 'lead.created',
+            'conditions' => [
+                ['field' => 'estimated_value', 'operator' => 'greater_or_equal', 'value' => '10000'],
+            ],
+        ]);
+
+        Lead::factory()->create(['estimated_value' => null, 'owner_id' => $user->id]);
+
+        $this->assertSame(0, Task::count());
+        $run = AutomationRun::firstOrFail();
+        $this->assertSame('skipped', $run->status);
+        $this->assertSame('conditions_not_met', $run->result['reason']);
     }
 
     public function test_condition_limits_and_types_rejected(): void
