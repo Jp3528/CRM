@@ -114,6 +114,8 @@ class QuoteController extends Controller
             'quote' => $quote,
             'canUpdate' => $user->can('update', $quote),
             'editable' => in_array($quote->status, Quote::EDITABLE_STATUSES, true),
+            'sale' => $quote->sale()->first(['id', 'number', 'status', 'total', 'currency']),
+            'canCreateSale' => $user->can('create', \App\Models\Sale::class),
         ]);
     }
 

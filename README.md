@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 7: Productos + cotizaciones.
+CRM empresarial web construido con Laravel. Fase 8: Ventas + facturación interna.
 
 ## Stack
 
@@ -285,6 +285,40 @@ separados (transiciones usan `quotes.update`).
 - Sidebar con secciones CRM/Trabajo/Ventas/Administración; Productos y Cotizaciones
   activos por permiso.
 
+## Fase 8 — Ventas + facturación interna (no fiscal)
+
+Sin estructuras previas: 2 migraciones incrementales (`sales`+`sale_items`,
+`invoices`+`invoice_items`; tipos verificados `numeric` en PostgreSQL real).
+Permisos `sales.*` e `invoices.*` idempotentes; `SalePolicy` + `InvoicePolicy`.
+
+- Ventas: `number unique S-AAAA-NNNNNN` (ID, concurrent-safe), `quote_id? unique
+  (1 Quote → 1 Sale)`, `company_id restrict`, `contact_id?/opportunity_id?/owner_id?
+  nullOnDelete`, `status draft/confirmed/completed/cancelled`, `currency`, `sale_date`,
+  totales `numeric(15,2)`, `notes?`, `completed_at?/cancelled_at?`, SoftDeletes.
+  Líneas con snapshot (`sku/description/unit/quantity 12,3/precios/descuentos/impuestos`).
+- Conversión Quote→Sale (`SaleCreationService::fromQuote`): solo accepted, con lock,
+  copia exacta de totales e ítems del QuoteItem (nunca del catálogo), actividad.
+  Doble conversión rechazada (test, sin duplicados).
+- Venta manual básica con `SaleCalculator` (delega en `QuoteCalculator`, misma
+  matemática BCMath); totales del frontend ignorados. Edición: draft manual completa;
+  con cotización solo notas (historia intacta); no-draft 403.
+- Transiciones: draft→confirmed/cancelled, confirmed→completed/cancelled, terminales;
+  cancelar bloqueado con factura vigente. Actividades `status_change`.
+- Facturas INTERNAS (aviso visible "no fiscal" en índice/ficha/impresión): `number
+  unique INV-AAAA-NNNNNN`, `sale_id? unique (1 Sale → 1 Invoice)`, snapshots de
+  empresa (`company_name/tax_id/address`) y contacto, `due_date?`, `paid_at?/
+  cancelled_at?`, SoftDeletes. Sin `paid_amount` (decisión: sin ledger; paid es marca).
+- `InvoiceCreationService::fromSale`: solo confirmed/completed, con lock, copia exacta
+  de SaleItems + totales, doble facturación rechazada, todo transaccional.
+- Estados factura: draft→sent/paid/cancelled, sent→paid/cancelled, paid terminal;
+  `paid_at` manual (registro interno, sin pago real); overdue calculado
+  (`due_date < today`, no paid/cancelled), sin scheduler.
+- Sin creación manual de facturas (solo desde venta) ni edición comercial (ficha +
+  estados + impresión). Vista imprimible HTML para venta y factura.
+- Integraciones: "Crear venta" en cotización aceptada (+enlace si existe), "Generar
+  factura" en venta confirmada/completada, listas en oportunidad/empresa/contacto,
+  uso en producto (quotes/ventas/facturas), dashboard (recientes + pendientes + vencidas).
+
 ## Tests
 
 ```sh
@@ -328,14 +362,21 @@ ignorado, snapshot inmutable, descuentos %/fijo, cantidad decimal, inmutabilidad
 coherencia empresa/contacto/oportunidad, prefill desde oportunidad, transiciones con
 timestamps, vencida calculada, integraciones y uso de producto.
 
++ Fase 8 (`tests/Feature/PhaseEightTest`, 22 tests): CRUD ventas/facturas, 403
+(11/7 ops), recálculo manual, validación, notas-solo con origen, soft delete,
+búsqueda/filtros/sorting/paginación, transiciones con timestamps, conversión
+Quote→Sale exacta, doble conversión/facturación rechazadas, snapshots en 3 niveles,
+transiciones de factura, vencida calculada, integraciones y dashboard.
+
 ## Frontend
 
 ```sh
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 7)
+## Alcance actual (Fase 8)
 
-Productos + cotizaciones funcionan completamente. Todo lo anterior continúa activo.
-Todavía NO hay: ventas, facturas, pagos, inventario, tickets, campañas,
-automatizaciones, reportes avanzados, forecast, API, webhooks ni PDF profesional.
+Ventas + facturación interna funcionan. Todo lo anterior continúa activo.
+Las facturas son documentos internos NO fiscales, sin pagos reales. Todavía NO hay:
+pasarelas, facturación electrónica/SUNAT/SAT/DIAN, inventario, compras, contabilidad,
+tickets, campañas, automatizaciones, reportes avanzados, API ni webhooks.

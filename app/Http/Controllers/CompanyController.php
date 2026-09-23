@@ -96,6 +96,8 @@ class CompanyController extends Controller
             'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
             'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
             'quotes' => fn ($q) => $q->latest()->limit(5),
+            'sales' => fn ($q) => $q->latest()->limit(5),
+            'invoices' => fn ($q) => $q->latest()->limit(5),
         ])->loadCount('contacts');
 
         return view('companies.show', [
@@ -103,6 +105,8 @@ class CompanyController extends Controller
             'canUpdate' => request()->user()->can('update', $company),
             'canCreateContact' => request()->user()->can('create', \App\Models\Contact::class),
             'canViewQuotes' => request()->user()->can('viewAny', \App\Models\Quote::class),
+            'canViewSales' => request()->user()->can('viewAny', \App\Models\Sale::class),
+            'canViewInvoices' => request()->user()->can('viewAny', \App\Models\Invoice::class),
         ]);
     }
 

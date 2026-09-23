@@ -112,4 +112,32 @@
             @endif
         </x-card>
     @endif
+
+    @if ($canViewSales && $company->sales->isNotEmpty())
+        <x-card title="Ventas recientes" subtitle="Últimas ventas de la empresa">
+            <ul class="divide-y divide-slate-100 text-sm">
+                @foreach ($company->sales as $sale)
+                    <li class="flex items-center gap-2 py-2">
+                        <a href="{{ route('sales.show', $sale) }}" class="font-mono font-medium hover:underline">{{ $sale->number }}</a>
+                        <x-status-badge :status="$sale->status" />
+                        <span class="ml-auto text-slate-600">{{ number_format($sale->total, 2) }} {{ $sale->currency }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </x-card>
+    @endif
+
+    @if ($canViewInvoices && $company->invoices->isNotEmpty())
+        <x-card title="Facturas recientes" subtitle="Documentos internos de la empresa">
+            <ul class="divide-y divide-slate-100 text-sm">
+                @foreach ($company->invoices as $invoice)
+                    <li class="flex items-center gap-2 py-2">
+                        <a href="{{ route('invoices.show', $invoice) }}" class="font-mono font-medium hover:underline">{{ $invoice->number }}</a>
+                        <x-status-badge :status="$invoice->status" />
+                        <span class="ml-auto text-slate-600">{{ number_format($invoice->total, 2) }} {{ $invoice->currency }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </x-card>
+    @endif
 @endsection

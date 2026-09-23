@@ -16,6 +16,8 @@ $navSections = [
     ['title' => 'Ventas', 'items' => [
         ['label' => 'Productos', 'route' => 'products.index', 'can' => 'products.view', 'soon' => false],
         ['label' => 'Cotizaciones', 'route' => 'quotes.index', 'can' => 'quotes.view', 'soon' => false],
+        ['label' => 'Ventas', 'route' => 'sales.index', 'can' => 'sales.view', 'soon' => false],
+        ['label' => 'Facturas', 'route' => 'invoices.index', 'can' => 'invoices.view', 'soon' => false],
     ]],
 ];
 $navAdmin = [

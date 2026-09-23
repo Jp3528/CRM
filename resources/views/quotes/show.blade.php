@@ -13,6 +13,11 @@
         <span class="ml-auto flex gap-2 text-sm">
             <a href="{{ route('quotes.print', $quote) }}" target="_blank" class="text-slate-700 hover:underline">Imprimir</a>
             @if ($canUpdate && $editable)<a href="{{ route('quotes.edit', $quote) }}" class="text-slate-700 hover:underline">Editar</a>@endif
+            @if ($sale)
+                <a href="{{ route('sales.show', $sale) }}" class="font-medium text-slate-900 hover:underline">Ver venta {{ $sale->number }}</a>
+            @elseif ($quote->status === 'accepted' && $canCreateSale)
+                <a href="{{ route('quotes.sale.create', $quote) }}" class="font-medium text-slate-900 hover:underline">Crear venta →</a>
+            @endif
             @can('delete', $quote)
                 <form method="POST" action="{{ route('quotes.destroy', $quote) }}" class="inline"
                     x-data @submit.prevent="if (confirm('¿Eliminar {{ $quote->number }}?')) $el.submit()">

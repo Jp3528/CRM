@@ -28,6 +28,14 @@ class PermissionSeeder extends Seeder
         ['name' => 'quotes.create', 'label' => 'Create Quotes', 'description' => 'Permite crear cotizaciones.', 'group' => 'quotes'],
         ['name' => 'quotes.update', 'label' => 'Update Quotes', 'description' => 'Permite editar cotizaciones y cambiar su estado.', 'group' => 'quotes'],
         ['name' => 'quotes.delete', 'label' => 'Delete Quotes', 'description' => 'Permite eliminar cotizaciones.', 'group' => 'quotes'],
+        ['name' => 'sales.view', 'label' => 'View Sales', 'description' => 'Permite ver ventas.', 'group' => 'sales'],
+        ['name' => 'sales.create', 'label' => 'Create Sales', 'description' => 'Permite crear ventas y convertir cotizaciones.', 'group' => 'sales'],
+        ['name' => 'sales.update', 'label' => 'Update Sales', 'description' => 'Permite editar ventas y cambiar su estado.', 'group' => 'sales'],
+        ['name' => 'sales.delete', 'label' => 'Delete Sales', 'description' => 'Permite eliminar ventas.', 'group' => 'sales'],
+        ['name' => 'invoices.view', 'label' => 'View Invoices', 'description' => 'Permite ver facturas internas.', 'group' => 'invoices'],
+        ['name' => 'invoices.create', 'label' => 'Create Invoices', 'description' => 'Permite generar facturas internas desde ventas.', 'group' => 'invoices'],
+        ['name' => 'invoices.update', 'label' => 'Update Invoices', 'description' => 'Permite cambiar el estado de facturas internas.', 'group' => 'invoices'],
+        ['name' => 'invoices.delete', 'label' => 'Delete Invoices', 'description' => 'Permite eliminar facturas internas.', 'group' => 'invoices'],
     ];
 
     public function run(): void

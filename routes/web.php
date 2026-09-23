@@ -8,6 +8,8 @@ use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceStatusController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadConversionController;
 use App\Http\Controllers\OpportunityController;
@@ -16,13 +18,17 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\QuoteStatusController;
+use App\Http\Controllers\QuoteToSaleController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SaleStatusController;
+use App\Http\Controllers\SaleToInvoiceController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskStatusController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| NexusCRM Fase 7 — Productos + cotizaciones (Policies por módulo)
+| NexusCRM Fase 8 — Ventas + facturación interna (Policies por módulo)
 */
 
 // Landing pública mínima (conserva GET / 200 de Fase 1).
@@ -117,6 +123,37 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->name('quotes.accept');
     Route::patch('quotes/{quote}/reject', [QuoteStatusController::class, 'reject'])
         ->name('quotes.reject');
+
+    // Ventas + facturación interna (Fase 8). Conversión/impresión antes de
+    // los resources para que {sale}/{invoice} no capturen esas rutas.
+    Route::get('sales/{sale}/invoice/create', [SaleToInvoiceController::class, 'create'])
+        ->name('sales.invoice.create');
+    Route::post('sales/{sale}/invoice', [SaleToInvoiceController::class, 'store'])
+        ->name('sales.invoice.store');
+    Route::resource('sales', SaleController::class);
+    Route::get('sales/{sale}/print', [SaleController::class, 'print'])
+        ->name('sales.print');
+    Route::patch('sales/{sale}/confirm', [SaleStatusController::class, 'confirm'])
+        ->name('sales.confirm');
+    Route::patch('sales/{sale}/complete', [SaleStatusController::class, 'complete'])
+        ->name('sales.complete');
+    Route::patch('sales/{sale}/cancel', [SaleStatusController::class, 'cancel'])
+        ->name('sales.cancel');
+
+    Route::get('quotes/{quote}/sale/create', [QuoteToSaleController::class, 'create'])
+        ->name('quotes.sale.create');
+    Route::post('quotes/{quote}/sale', [QuoteToSaleController::class, 'store'])
+        ->name('quotes.sale.store');
+
+    Route::resource('invoices', InvoiceController::class)->except(['create', 'store', 'edit', 'update']);
+    Route::get('invoices/{invoice}/print', [InvoiceController::class, 'print'])
+        ->name('invoices.print');
+    Route::patch('invoices/{invoice}/send', [InvoiceStatusController::class, 'send'])
+        ->name('invoices.send');
+    Route::patch('invoices/{invoice}/pay', [InvoiceStatusController::class, 'pay'])
+        ->name('invoices.pay');
+    Route::patch('invoices/{invoice}/cancel', [InvoiceStatusController::class, 'cancel'])
+        ->name('invoices.cancel');
 
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([

@@ -155,6 +155,7 @@ class OpportunityController extends Controller
             'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
             'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
             'quotes' => fn ($q) => $q->latest()->limit(5),
+            'sales' => fn ($q) => $q->latest()->limit(5),
         ]);
 
         $user = request()->user();
@@ -164,6 +165,7 @@ class OpportunityController extends Controller
             'canUpdate' => $user->can('update', $opportunity),
             'canMove' => $user->can('move', $opportunity),
             'canCreateQuote' => $user->can('create', \App\Models\Quote::class),
+            'canViewSales' => $user->can('viewAny', \App\Models\Sale::class),
             'pipelineStages' => $opportunity->pipeline->stages()->get(['id', 'name', 'is_won', 'is_lost']),
         ]);
     }

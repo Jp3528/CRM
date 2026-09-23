@@ -50,6 +50,18 @@ class Company extends Model
         return $this->hasMany(Quote::class)->latest();
     }
 
+    /** @return HasMany<Sale, $this> */
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class)->latest();
+    }
+
+    /** @return HasMany<Invoice, $this> */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class)->latest();
+    }
+
     /** @return MorphToMany<Tag, $this> */
     public function tags(): MorphToMany
     {

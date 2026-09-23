@@ -44,6 +44,8 @@
                 @if ($canSeeTasks || $canSeeActivities)<li><a class="text-slate-700 hover:underline" href="{{ route('calendar.index') }}">· Calendario</a></li>@endif
                 @can('products.view')<li><a class="text-slate-700 hover:underline" href="{{ route('products.index') }}">· Productos</a></li>@endcan
                 @can('quotes.view')<li><a class="text-slate-700 hover:underline" href="{{ route('quotes.index') }}">· Cotizaciones</a></li>@endcan
+                @can('sales.view')<li><a class="text-slate-700 hover:underline" href="{{ route('sales.index') }}">· Ventas</a></li>@endcan
+                @can('invoices.view')<li><a class="text-slate-700 hover:underline" href="{{ route('invoices.index') }}">· Facturas</a></li>@endcan
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan
                 <li><a class="text-slate-700 hover:underline" href="{{ route('profile.edit') }}">· Mi perfil</a></li>
             </ul>
@@ -141,6 +143,49 @@
                     </ul>
                 @endif
             </x-card>
+        </div>
+    @endif
+
+    @if ($canSeeSales || $canSeeInvoices)
+        <div class="grid gap-4 md:grid-cols-2">
+            @if ($canSeeSales)
+                <x-card title="Ventas recientes ({{ $recentSales->count() }})" subtitle="Últimos documentos">
+                    @if ($recentSales->isEmpty())
+                        <p class="text-sm text-slate-500">Sin ventas. <a href="{{ route('sales.index') }}" class="hover:underline">Ver ventas</a></p>
+                    @else
+                        <ul class="space-y-2 text-sm">
+                            @foreach ($recentSales as $sale)
+                                <li><a href="{{ route('sales.show', $sale) }}" class="font-mono hover:underline">{{ $sale->number }}</a>
+                                    <span class="text-xs text-slate-400">· {{ $sale->company?->trade_name ?? '—' }} · {{ number_format($sale->total, 2) }} {{ $sale->currency }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-card>
+            @endif
+            @if ($canSeeInvoices)
+                <x-card title="Facturas pendientes ({{ $pendingInvoices->count() }}) + vencidas ({{ $overdueInvoices->count() }})" subtitle="Documentos internos">
+                    @if ($pendingInvoices->isNotEmpty())
+                        <ul class="mb-2 space-y-1 text-sm">
+                            @foreach ($pendingInvoices as $invoice)
+                                <li><a href="{{ route('invoices.show', $invoice) }}" class="font-mono hover:underline">{{ $invoice->number }}</a>
+                                    <span class="text-xs text-slate-400">· {{ $invoice->status }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    @if ($overdueInvoices->isNotEmpty())
+                        <p class="mb-1 text-xs font-semibold uppercase text-yellow-700">Vencidas</p>
+                        <ul class="space-y-1 text-sm">
+                            @foreach ($overdueInvoices as $invoice)
+                                <li><a href="{{ route('invoices.show', $invoice) }}" class="font-mono hover:underline">{{ $invoice->number }}</a>
+                                    <span class="text-xs text-slate-400">· venció {{ $invoice->due_date?->format('Y-m-d') }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    @if ($pendingInvoices->isEmpty() && $overdueInvoices->isEmpty())
+                        <p class="text-sm text-slate-500">Sin pendientes.</p>
+                    @endif
+                </x-card>
+            @endif
         </div>
     @endif
 @endsection

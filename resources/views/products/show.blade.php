@@ -42,8 +42,8 @@
         </div>
     </x-card>
 
-    <x-card title="Uso en cotizaciones ({{ $product->quote_items_count }})" subtitle="Histórico; cambiar el producto no lo altera">
-        @if ($recentQuotes->isEmpty())
+    <x-card title="Uso en cotizaciones ({{ $product->quote_items_count }}) · ventas ({{ $product->sale_items_count }}) · facturas ({{ $product->invoice_items_count }})" subtitle="Histórico; cambiar el producto no lo altera">
+        @if ($recentQuotes->isEmpty() && $recentSales->isEmpty() && $recentInvoices->isEmpty())
             <p class="text-sm text-slate-500">Sin uso registrado.</p>
         @else
             <ul class="divide-y divide-slate-100 text-sm">
@@ -51,9 +51,29 @@
                     <li class="py-2">
                         @if ($item->quote)
                             <a href="{{ route('quotes.show', $item->quote) }}" class="font-medium hover:underline">{{ $item->quote->number }}</a>
-                            <span class="text-xs text-slate-400">· {{ $item->quote->status }} · {{ number_format($item->total, 2) }}</span>
+                            <span class="text-xs text-slate-400">· cotización · {{ $item->quote->status }} · {{ number_format($item->total, 2) }}</span>
                         @else
                             <span class="text-slate-500">Cotización eliminada · {{ number_format($item->total, 2) }}</span>
+                        @endif
+                    </li>
+                @endforeach
+                @foreach ($recentSales as $item)
+                    <li class="py-2">
+                        @if ($item->sale)
+                            <a href="{{ route('sales.show', $item->sale) }}" class="font-medium hover:underline">{{ $item->sale->number }}</a>
+                            <span class="text-xs text-slate-400">· venta · {{ $item->sale->status }} · {{ number_format($item->total, 2) }}</span>
+                        @else
+                            <span class="text-slate-500">Venta eliminada · {{ number_format($item->total, 2) }}</span>
+                        @endif
+                    </li>
+                @endforeach
+                @foreach ($recentInvoices as $item)
+                    <li class="py-2">
+                        @if ($item->invoice)
+                            <a href="{{ route('invoices.show', $item->invoice) }}" class="font-medium hover:underline">{{ $item->invoice->number }}</a>
+                            <span class="text-xs text-slate-400">· factura · {{ $item->invoice->status }} · {{ number_format($item->total, 2) }}</span>
+                        @else
+                            <span class="text-slate-500">Factura eliminada · {{ number_format($item->total, 2) }}</span>
                         @endif
                     </li>
                 @endforeach

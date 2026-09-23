@@ -88,6 +88,12 @@ class Opportunity extends Model
         return $this->hasMany(Quote::class)->latest();
     }
 
+    /** @return HasMany<Sale, $this> */
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class)->latest();
+    }
+
     /** @return MorphToMany<Tag, $this> */
     public function tags(): MorphToMany
     {

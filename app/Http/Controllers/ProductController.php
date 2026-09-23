@@ -83,10 +83,22 @@ class ProductController extends Controller
         $this->authorize('view', $product);
 
         $product->load(['category:id,name', 'creator:id,name'])
-            ->loadCount('quoteItems');
+            ->loadCount(['quoteItems', 'saleItems', 'invoiceItems']);
 
         $recentQuotes = $product->quoteItems()
             ->with('quote:id,number,status,total,currency')
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $recentSales = $product->saleItems()
+            ->with('sale:id,number,status,total,currency')
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $recentInvoices = $product->invoiceItems()
+            ->with('invoice:id,number,status,total,currency')
             ->latest()
             ->limit(5)
             ->get();
@@ -96,6 +108,8 @@ class ProductController extends Controller
             // Costo interno: visible solo para quien puede editar productos.
             'canSeeCost' => request()->user()->can('update', $product),
             'recentQuotes' => $recentQuotes,
+            'recentSales' => $recentSales,
+            'recentInvoices' => $recentInvoices,
         ]);
     }
 

@@ -98,6 +98,20 @@
 
     @include('partials.timeline', ['subject' => $opportunity])
 
+    @if ($canViewSales && $opportunity->sales->isNotEmpty())
+        <x-card title="Ventas relacionadas" subtitle="Generadas desde cotizaciones u otras vías">
+            <ul class="divide-y divide-slate-100 text-sm">
+                @foreach ($opportunity->sales as $sale)
+                    <li class="flex items-center gap-2 py-2">
+                        <a href="{{ route('sales.show', $sale) }}" class="font-mono font-medium hover:underline">{{ $sale->number }}</a>
+                        <x-status-badge :status="$sale->status" />
+                        <span class="ml-auto text-slate-600">{{ number_format($sale->total, 2) }} {{ $sale->currency }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </x-card>
+    @endif
+
     <x-card title="Cotizaciones ({{ $opportunity->quotes->count() }})" subtitle="Documentos vinculados">
         @if ($opportunity->quotes->isEmpty())
             <p class="text-sm text-slate-500">Sin cotizaciones vinculadas.

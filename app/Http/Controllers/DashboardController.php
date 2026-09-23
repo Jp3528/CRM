@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Models\Invoice;
 use App\Models\Quote;
+use App\Models\Sale;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -75,6 +77,19 @@ class DashboardController extends Controller
             'pendingQuotes' => $pendingQuotes,
             'expiringQuotes' => $expiringQuotes,
             'canSeeQuotes' => $user->can('viewAny', Quote::class),
+            'recentSales' => $user->can('viewAny', Sale::class)
+                ? Sale::with('company:id,trade_name')->latest()->limit(5)->get()
+                : collect(),
+            'pendingInvoices' => $user->can('viewAny', Invoice::class)
+                ? Invoice::with('company:id,trade_name')->whereIn('status', ['draft', 'sent'])->latest()->limit(5)->get()
+                : collect(),
+            'overdueInvoices' => $user->can('viewAny', Invoice::class)
+                ? Invoice::with('company:id,trade_name')->whereNotNull('due_date')
+                    ->whereDate('due_date', '<', today())
+                    ->whereNotIn('status', ['paid', 'cancelled'])->orderBy('due_date')->limit(5)->get()
+                : collect(),
+            'canSeeSales' => $user->can('viewAny', Sale::class),
+            'canSeeInvoices' => $user->can('viewAny', Invoice::class),
         ]);
     }
 }

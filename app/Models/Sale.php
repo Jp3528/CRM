@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Database\Factories\QuoteFactory;
+use Database\Factories\SaleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,37 +10,41 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Quote extends Model
+class Sale extends Model
 {
-    /** @use HasFactory<QuoteFactory> */
+    /** @use HasFactory<SaleFactory> */
     use HasFactory, SoftDeletes;
 
-    public const STATUSES = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
+    public const STATUSES = ['draft', 'confirmed', 'completed', 'cancelled'];
 
-    /** Estados editables comercialmente (accepted/rejected protegidas). */
-    public const EDITABLE_STATUSES = ['draft', 'sent'];
+    public const EDITABLE_STATUSES = ['draft'];
 
-    public const SORTABLE = ['number', 'total', 'status', 'issue_date', 'valid_until', 'created_at'];
+    public const SORTABLE = ['number', 'total', 'status', 'sale_date', 'created_at'];
 
     protected $fillable = [
-        'number', 'company_id', 'contact_id', 'opportunity_id', 'owner_id',
-        'status', 'currency', 'issue_date', 'valid_until',
+        'number', 'quote_id', 'company_id', 'contact_id', 'opportunity_id', 'owner_id',
+        'status', 'currency', 'sale_date',
         'subtotal', 'discount_total', 'tax_total', 'total',
-        'notes', 'terms', 'accepted_at', 'rejected_at',
+        'notes', 'completed_at', 'cancelled_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'issue_date' => 'date',
-            'valid_until' => 'date',
+            'sale_date' => 'date',
             'subtotal' => 'decimal:2',
             'discount_total' => 'decimal:2',
             'tax_total' => 'decimal:2',
             'total' => 'decimal:2',
-            'accepted_at' => 'datetime',
-            'rejected_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
+    }
+
+    /** @return BelongsTo<Quote, $this> */
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class);
     }
 
     /** @return BelongsTo<Company, $this> */
@@ -67,30 +71,19 @@ class Quote extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
-    /** @return HasMany<QuoteItem, $this> */
+    /** @return HasMany<SaleItem, $this> */
     public function items(): HasMany
     {
-        return $this->hasMany(QuoteItem::class)->orderBy('position');
+        return $this->hasMany(SaleItem::class)->orderBy('position');
     }
 
-    /** @return HasOne<Sale, $this> */
-    public function sale(): HasOne
+    /** @return HasOne<Invoice, $this> */
+    public function invoice(): HasOne
     {
-        return $this->hasOne(Sale::class);
+        return $this->hasOne(Invoice::class);
     }
 
-    /**
-     * Vencida por fecha sin resolución. Calculado (sin scheduler en esta fase):
-     * valid_until pasada y estado pendiente de decisión.
-     */
-    public function getIsExpiredAttribute(): bool
-    {
-        return $this->valid_until !== null
-            && $this->valid_until->isPast()
-            && ! in_array($this->status, ['accepted', 'rejected'], true);
-    }
-
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  \Illuminate\Database\Eloquent\Builder<Sale>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -100,7 +93,10 @@ class Quote extends Model
         $term = mb_strtolower(trim($term));
 
         return $query->where(function ($q) use ($term) {
-            $q->whereRaw('LOWER(quotes.number) LIKE ?', ["%{$term}%"])
+            $q->whereRaw('LOWER(sales.number) LIKE ?', ["%{$term}%"])
+                ->orWhereHas('quote', function ($qq) use ($term) {
+                    $qq->whereRaw('LOWER(number) LIKE ?', ["%{$term}%"]);
+                })
                 ->orWhereHas('company', function ($cq) use ($term) {
                     $cq->whereRaw('LOWER(trade_name) LIKE ?', ["%{$term}%"]);
                 })
@@ -114,55 +110,55 @@ class Quote extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  \Illuminate\Database\Eloquent\Builder<Sale>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
             return $query;
         }
 
-        return $query->where('quotes.status', $status);
+        return $query->where('sales.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  \Illuminate\Database\Eloquent\Builder<Sale>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
             return $query;
         }
 
-        return $query->where('quotes.owner_id', $ownerId);
+        return $query->where('sales.owner_id', $ownerId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  \Illuminate\Database\Eloquent\Builder<Sale>  $query */
     public function scopeForCompany($query, mixed $companyId)
     {
         if (blank($companyId)) {
             return $query;
         }
 
-        return $query->where('quotes.company_id', $companyId);
+        return $query->where('sales.company_id', $companyId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  \Illuminate\Database\Eloquent\Builder<Sale>  $query */
     public function scopeCurrency($query, ?string $currency)
     {
         if (blank($currency)) {
             return $query;
         }
 
-        return $query->where('quotes.currency', $currency);
+        return $query->where('sales.currency', $currency);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
-    public function scopeIssuedBetween($query, mixed $from, mixed $to)
+    /** @param  \Illuminate\Database\Eloquent\Builder<Sale>  $query */
+    public function scopeSoldBetween($query, mixed $from, mixed $to)
     {
         if (! blank($from)) {
-            $query->whereDate('quotes.issue_date', '>=', $from);
+            $query->whereDate('sales.sale_date', '>=', $from);
         }
 
         if (! blank($to)) {
-            $query->whereDate('quotes.issue_date', '<=', $to);
+            $query->whereDate('sales.sale_date', '<=', $to);
         }
 
         return $query;

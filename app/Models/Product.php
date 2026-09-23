@@ -52,6 +52,18 @@ class Product extends Model
         return $this->hasMany(QuoteItem::class);
     }
 
+    /** @return HasMany<SaleItem, $this> */
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
+    /** @return HasMany<InvoiceItem, $this> */
+    public function invoiceItems(): HasMany
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
+
     /** @param  \Illuminate\Database\Eloquent\Builder<Product>  $query */
     public function scopeSearch($query, ?string $term)
     {
