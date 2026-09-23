@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        $this->call([RoleSeeder::class, PermissionSeeder::class, PipelineSeeder::class]);
+        $this->call([RoleSeeder::class, PermissionSeeder::class, PipelineSeeder::class, ProductSeeder::class]);
 
         if (app()->environment('testing')) {
             return;

@@ -61,4 +61,18 @@
     </div>
 
     @include('partials.timeline', ['subject' => $contact])
+
+    @if ($canViewQuotes && $contact->quotes->isNotEmpty())
+        <x-card title="Cotizaciones recientes" subtitle="Documentos del contacto">
+            <ul class="divide-y divide-slate-100 text-sm">
+                @foreach ($contact->quotes as $quote)
+                    <li class="flex items-center gap-2 py-2">
+                        <a href="{{ route('quotes.show', $quote) }}" class="font-mono font-medium hover:underline">{{ $quote->number }}</a>
+                        <x-status-badge :status="$quote->status" />
+                        <span class="ml-auto text-slate-600">{{ number_format($quote->total, 2) }} {{ $quote->currency }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </x-card>
+    @endif
 @endsection

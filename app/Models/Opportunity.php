@@ -82,6 +82,12 @@ class Opportunity extends Model
         return $this->hasMany(OpportunityStageHistory::class)->orderBy('changed_at');
     }
 
+    /** @return HasMany<Quote, $this> */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class)->latest();
+    }
+
     /** @return MorphToMany<Tag, $this> */
     public function tags(): MorphToMany
     {

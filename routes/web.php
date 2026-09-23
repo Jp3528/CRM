@@ -12,14 +12,17 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadConversionController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\OpportunityStageController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuoteStatusController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskStatusController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| NexusCRM Fase 6 — Tareas + actividades + calendario (Policies por módulo)
+| NexusCRM Fase 7 — Productos + cotizaciones (Policies por módulo)
 */
 
 // Landing pública mínima (conserva GET / 200 de Fase 1).
@@ -102,6 +105,18 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('activities', ActivityController::class);
 
     Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
+
+    // Productos + cotizaciones (Fase 7).
+    Route::resource('products', ProductController::class);
+    Route::resource('quotes', QuoteController::class);
+    Route::get('quotes/{quote}/print', [QuoteController::class, 'print'])
+        ->name('quotes.print');
+    Route::patch('quotes/{quote}/send', [QuoteStatusController::class, 'send'])
+        ->name('quotes.send');
+    Route::patch('quotes/{quote}/accept', [QuoteStatusController::class, 'accept'])
+        ->name('quotes.accept');
+    Route::patch('quotes/{quote}/reject', [QuoteStatusController::class, 'reject'])
+        ->name('quotes.reject');
 
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([

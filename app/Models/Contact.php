@@ -43,6 +43,12 @@ class Contact extends Model
         return $this->hasMany(Opportunity::class);
     }
 
+    /** @return HasMany<Quote, $this> */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class)->latest();
+    }
+
     /** @return MorphToMany<Tag, $this> */
     public function tags(): MorphToMany
     {

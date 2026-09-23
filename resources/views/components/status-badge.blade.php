@@ -14,6 +14,11 @@ $map = [
     'unqualified' => ['slate', 'No calificado'],
     'converted' => ['blue', 'Convertido'],
     'open' => ['green', 'Abierta'],
+    'draft' => ['slate', 'Borrador'],
+    'sent' => ['blue', 'Enviada'],
+    'accepted' => ['green', 'Aceptada'],
+    'rejected' => ['red', 'Rechazada'],
+    'expired' => ['yellow', 'Vencida'],
 ];
 [$color, $label] = $map[$status] ?? ['slate', ucfirst($status)];
 @endphp

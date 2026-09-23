@@ -95,12 +95,14 @@ class CompanyController extends Controller
             'contacts' => fn ($q) => $q->with('owner:id,name')->orderBy('first_name'),
             'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
             'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
+            'quotes' => fn ($q) => $q->latest()->limit(5),
         ])->loadCount('contacts');
 
         return view('companies.show', [
             'company' => $company,
             'canUpdate' => request()->user()->can('update', $company),
             'canCreateContact' => request()->user()->can('create', \App\Models\Contact::class),
+            'canViewQuotes' => request()->user()->can('viewAny', \App\Models\Quote::class),
         ]);
     }
 

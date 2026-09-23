@@ -42,6 +42,8 @@
                 @can('tasks.view')<li><a class="text-slate-700 hover:underline" href="{{ route('tasks.index') }}">· Tareas</a></li>@endcan
                 @can('activities.view')<li><a class="text-slate-700 hover:underline" href="{{ route('activities.index') }}">· Actividades</a></li>@endcan
                 @if ($canSeeTasks || $canSeeActivities)<li><a class="text-slate-700 hover:underline" href="{{ route('calendar.index') }}">· Calendario</a></li>@endif
+                @can('products.view')<li><a class="text-slate-700 hover:underline" href="{{ route('products.index') }}">· Productos</a></li>@endcan
+                @can('quotes.view')<li><a class="text-slate-700 hover:underline" href="{{ route('quotes.index') }}">· Cotizaciones</a></li>@endcan
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan
                 <li><a class="text-slate-700 hover:underline" href="{{ route('profile.edit') }}">· Mi perfil</a></li>
             </ul>
@@ -110,6 +112,35 @@
                     @endif
                 </x-card>
             @endif
+        </div>
+    @endif
+
+    @if ($canSeeQuotes)
+        <div class="grid gap-4 md:grid-cols-2">
+            <x-card title="Cotizaciones pendientes ({{ $pendingQuotes->count() }})" subtitle="Borrador o enviadas">
+                @if ($pendingQuotes->isEmpty())
+                    <p class="text-sm text-slate-500">Sin pendientes. <a href="{{ route('quotes.index') }}" class="hover:underline">Ver cotizaciones</a></p>
+                @else
+                    <ul class="space-y-2 text-sm">
+                        @foreach ($pendingQuotes as $quote)
+                            <li><a href="{{ route('quotes.show', $quote) }}" class="font-mono hover:underline">{{ $quote->number }}</a>
+                                <span class="text-xs text-slate-400">· {{ $quote->company?->trade_name ?? '—' }} · {{ number_format($quote->total, 2) }} {{ $quote->currency }}</span></li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-card>
+            <x-card title="Próximas a vencer ({{ $expiringQuotes->count() }})" subtitle="Vigencia dentro de 7 días">
+                @if ($expiringQuotes->isEmpty())
+                    <p class="text-sm text-slate-500">Ninguna por vencer.</p>
+                @else
+                    <ul class="space-y-2 text-sm">
+                        @foreach ($expiringQuotes as $quote)
+                            <li><a href="{{ route('quotes.show', $quote) }}" class="font-mono hover:underline">{{ $quote->number }}</a>
+                                <span class="text-xs text-slate-400">· vence {{ $quote->valid_until?->format('Y-m-d') }}</span></li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-card>
         </div>
     @endif
 @endsection

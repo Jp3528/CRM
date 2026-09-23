@@ -1,14 +1,22 @@
 @php
 $user = auth()->user()?->loadMissing(['roles', 'team']);
-$navMain = [
-    ['label' => 'Dashboard', 'route' => 'dashboard', 'can' => null, 'soon' => false],
-    ['label' => 'Empresas', 'route' => 'companies.index', 'can' => 'companies.view', 'soon' => false],
-    ['label' => 'Contactos', 'route' => 'contacts.index', 'can' => 'contacts.view', 'soon' => false],
-    ['label' => 'Leads', 'route' => 'leads.index', 'can' => 'leads.view', 'soon' => false],
-    ['label' => 'Oportunidades', 'route' => 'opportunities.index', 'can' => 'opportunities.view', 'soon' => false],
-    ['label' => 'Tareas', 'route' => 'tasks.index', 'can' => 'tasks.view', 'soon' => false],
-    ['label' => 'Actividades', 'route' => 'activities.index', 'can' => 'activities.view', 'soon' => false],
-    ['label' => 'Calendario', 'route' => 'calendar.index', 'can_any' => ['tasks.view', 'activities.view'], 'soon' => false],
+$navSections = [
+    ['title' => 'CRM', 'items' => [
+        ['label' => 'Dashboard', 'route' => 'dashboard', 'can' => null, 'soon' => false],
+        ['label' => 'Empresas', 'route' => 'companies.index', 'can' => 'companies.view', 'soon' => false],
+        ['label' => 'Contactos', 'route' => 'contacts.index', 'can' => 'contacts.view', 'soon' => false],
+        ['label' => 'Leads', 'route' => 'leads.index', 'can' => 'leads.view', 'soon' => false],
+        ['label' => 'Oportunidades', 'route' => 'opportunities.index', 'can' => 'opportunities.view', 'soon' => false],
+    ]],
+    ['title' => 'Trabajo', 'items' => [
+        ['label' => 'Tareas', 'route' => 'tasks.index', 'can' => 'tasks.view', 'soon' => false],
+        ['label' => 'Actividades', 'route' => 'activities.index', 'can' => 'activities.view', 'soon' => false],
+        ['label' => 'Calendario', 'route' => 'calendar.index', 'can_any' => ['tasks.view', 'activities.view'], 'soon' => false],
+    ]],
+    ['title' => 'Ventas', 'items' => [
+        ['label' => 'Productos', 'route' => 'products.index', 'can' => 'products.view', 'soon' => false],
+        ['label' => 'Cotizaciones', 'route' => 'quotes.index', 'can' => 'quotes.view', 'soon' => false],
+    ]],
 ];
 $navAdmin = [
     ['label' => 'Usuarios', 'route' => 'admin.users.index', 'can' => 'users.view', 'soon' => false],
@@ -32,20 +40,23 @@ $canSee = function (array $item) use ($user): bool {
         <span class="text-base font-semibold tracking-tight text-white">{{ config('app.name', 'NexusCRM') }}</span>
     </div>
     <nav class="flex-1 overflow-y-auto px-3 py-4 text-sm">
-        <p class="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">CRM</p>
-        <ul class="space-y-1">
-            @foreach ($navMain as $item)
-                @if ($canSee($item))
-                    <li>
-                        <a href="{{ route($item['route']) }}"
-                           class="flex items-center justify-between rounded-md px-3 py-2 {{ $isActive($item['route']) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                            <span>{{ $item['label'] }}</span>
-                            @if ($item['soon'])<x-badge color="slate">Próx.</x-badge>@endif
-                        </a>
-                    </li>
-                @endif
-            @endforeach
-        </ul>
+        @foreach ($navSections as $section)
+            @php $visible = collect($section['items'])->filter(fn ($i) => $canSee($i)); @endphp
+            @if ($visible->isNotEmpty())
+                <p class="px-2 pb-2 {{ $loop->first ? '' : 'pt-4 ' }}text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ $section['title'] }}</p>
+                <ul class="space-y-1">
+                    @foreach ($visible as $item)
+                        <li>
+                            <a href="{{ route($item['route']) }}"
+                               class="flex items-center justify-between rounded-md px-3 py-2 {{ $isActive($item['route']) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                                <span>{{ $item['label'] }}</span>
+                                @if ($item['soon'])<x-badge color="slate">Próx.</x-badge>@endif
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        @endforeach
         @if ($user && $user->hasPermission('users.view'))
             <p class="px-2 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Administración</p>
             <ul class="space-y-1">
@@ -78,19 +89,23 @@ $canSee = function (array $item) use ($user): bool {
             <button type="button" x-on:click="sidebarOpen = false" class="rounded p-1 text-slate-400 hover:text-white" aria-label="Cerrar menú">✕</button>
         </div>
         <nav class="flex-1 overflow-y-auto px-3 py-4 text-sm">
-            <ul class="space-y-1">
-                @foreach ($navMain as $item)
-                    @if ($canSee($item))
-                        <li>
-                            <a href="{{ route($item['route']) }}"
-                               class="flex items-center justify-between rounded-md px-3 py-2 {{ $isActive($item['route']) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                                <span>{{ $item['label'] }}</span>
-                                @if ($item['soon'])<x-badge color="slate">Próx.</x-badge>@endif
-                            </a>
-                        </li>
-                    @endif
-                @endforeach
-            </ul>
+            @foreach ($navSections as $section)
+                @php $visible = collect($section['items'])->filter(fn ($i) => $canSee($i)); @endphp
+                @if ($visible->isNotEmpty())
+                    <p class="px-2 pb-2 {{ $loop->first ? '' : 'pt-4 ' }}text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ $section['title'] }}</p>
+                    <ul class="space-y-1">
+                        @foreach ($visible as $item)
+                            <li>
+                                <a href="{{ route($item['route']) }}"
+                                   class="flex items-center justify-between rounded-md px-3 py-2 {{ $isActive($item['route']) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                                    <span>{{ $item['label'] }}</span>
+                                    @if ($item['soon'])<x-badge color="slate">Próx.</x-badge>@endif
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            @endforeach
             @if ($user && $user->hasPermission('users.view'))
                 <p class="px-2 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Administración</p>
                 <ul class="space-y-1">

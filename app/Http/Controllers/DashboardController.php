@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Models\Quote;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -41,6 +42,26 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        // Cotizaciones pendientes y próximas a vencer (conteos + top 5, sin analítica).
+        $pendingQuotes = collect();
+        $expiringQuotes = collect();
+
+        if ($user->can('viewAny', Quote::class)) {
+            $pendingQuotes = Quote::with('company:id,trade_name')
+                ->whereIn('status', ['draft', 'sent'])
+                ->orderBy('valid_until')
+                ->limit(5)
+                ->get();
+            $expiringQuotes = Quote::with('company:id,trade_name')
+                ->whereIn('status', ['draft', 'sent'])
+                ->whereNotNull('valid_until')
+                ->whereDate('valid_until', '>=', today())
+                ->whereDate('valid_until', '<=', today()->addDays(7))
+                ->orderBy('valid_until')
+                ->limit(5)
+                ->get();
+        }
+
         return view('dashboard', [
             'user' => $user,
             'primaryRole' => $user->primaryRole(),
@@ -51,6 +72,9 @@ class DashboardController extends Controller
             'upcomingMeetings' => $upcomingMeetings,
             'canSeeTasks' => $user->can('viewAny', Task::class),
             'canSeeActivities' => $user->can('viewAny', Activity::class),
+            'pendingQuotes' => $pendingQuotes,
+            'expiringQuotes' => $expiringQuotes,
+            'canSeeQuotes' => $user->can('viewAny', Quote::class),
         ]);
     }
 }

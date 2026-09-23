@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 6: Tareas + actividades + calendario.
+CRM empresarial web construido con Laravel. Fase 7: Productos + cotizaciones.
 
 ## Stack
 
@@ -245,6 +245,46 @@ update/delete` añadidos idempotentes en `PermissionSeeder::EXTRA`.
 - Dashboard moderado: mis tareas de hoy, vencidas, próximos 7 días y próximas reuniones
   (conteos + top 5 con enlaces), sin analítica comercial.
 
+## Fase 7 — Productos + catálogo + cotizaciones
+
+Sin estructuras previas: 3 migraciones incrementales (`product_categories`+`products`,
+`quotes`, `quote_items`; tipos verificados `numeric` en PostgreSQL real, sin float).
+Permisos `products.*` y `quotes.*` añadidos idempotentes en `PermissionSeeder::EXTRA`;
+`ProductPolicy` + `QuotePolicy` con patrón del proyecto. Sin `quotes.send/accept`
+separados (transiciones usan `quotes.update`).
+
+- Productos: `sku unique` (manual, normalizado a mayúsculas), `name, description,
+  category_id, unit (unit/hour/day/service/license/package), price, cost (interno),
+  tax_rate 0–100, status active/inactive, created_by, SoftDeletes`. Categorías como
+  tabla simple (sin jerarquía). Búsqueda (sku/nombre/descripción/categoría), filtros
+  (estado/categoría/unidad), whitelist (`sku, name, price, status, created_at,
+  updated_at`), paginación 15, `withCount(quoteItems)`.
+- Costo visible solo para quien puede editar (sin matriz nueva). Inactivos ocultos de
+  líneas nuevas pero preservados en histórico (`nullOnDelete`).
+- Cotizaciones: `number unique Q-AAAA-NNNNNN` (derivado del ID, seguro en concurrencia),
+  `company_id requerida, contact_id?, opportunity_id?, owner_id, status, currency,
+  issue_date, valid_until?, subtotal/discount_total/tax_total/total numeric(15,2),
+  notes?, terms?, accepted_at?, rejected_at?, SoftDeletes`. Estados
+  `draft/sent/accepted/rejected/expired(calculado)`; editable solo draft/sent.
+- Líneas: `product_id? (nullOnDelete), position, description, unit, quantity
+  numeric(12,3) > 0, unit_price, discount none/percentage(0–100)/fixed(<=base),
+  tax_rate 0–100, subtotal/discount/tax/total` calculados. Snapshot obligatorio:
+  descripción/precio/impuesto congelados (test: cambiar producto no altera línea).
+- `QuoteCalculator` (BCMath, 2 decimales) como fuente única; JS/Alpine solo previsualiza.
+  Totales del frontend ignorados (test tampering obligatorio en verde).
+- `QuoteService`: create/update/transition transaccionales; coherencia empresa/contacto/
+  oportunidad (rechazo cruzado, vinculación explícita si contacto sin empresa);
+  prefill de moneda desde oportunidad; sin FX; `valid_until >= issue_date`.
+- Transiciones: draft→sent/accepted/rejected, sent→accepted/rejected, terminales
+  accepted/rejected (403/edición bloqueada), vencida calculada bloquea envío;
+  actividades `status_change` en crear/enviar/aceptar/rechazar (empresa u oportunidad).
+- Integraciones: "Nueva cotización" prellenada desde oportunidad (sin líneas ficticias),
+  lista en ficha de oportunidad, recientes en empresa/contacto, uso en producto,
+  widgets de dashboard (pendientes + próximas a vencer), vista imprimible HTML
+  (sin sidebar/topbar/acciones; sin librería PDF).
+- Sidebar con secciones CRM/Trabajo/Ventas/Administración; Productos y Cotizaciones
+  activos por permiso.
+
 ## Tests
 
 ```sh
@@ -281,15 +321,21 @@ tipo sistema rechazado en creación y protegido en edición/eliminación, reuni�
 `scheduled_at`, labels polimórficos ×4 entidades, timeline en ficha, calendario
 (permiso/eventos/semana/día/alcance), widgets de dashboard.
 
++ Fase 7 (`tests/Feature/PhaseSevenTest`, 25 tests): CRUD productos/cotizaciones,
+403 (7/11 ops), SKU unique/normalizado, costo solo editores, soft delete con histórico,
+búsqueda/filtros/sorting/paginación, producto inactivo rechazado, tampering de totales
+ignorado, snapshot inmutable, descuentos %/fijo, cantidad decimal, inmutabilidad accepted,
+coherencia empresa/contacto/oportunidad, prefill desde oportunidad, transiciones con
+timestamps, vencida calculada, integraciones y uso de producto.
+
 ## Frontend
 
 ```sh
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 6)
+## Alcance actual (Fase 7)
 
-Tareas + actividades + calendario funcionan. Oportunidades/Kanban, Leads, Empresas y
-Contactos continúan activos. Todavía NO hay: notificaciones, recordatorios por email,
-Google/Outlook Calendar, automatizaciones, productos, cotizaciones, ventas, tickets,
-campañas, reportes avanzados, forecast, API ni integraciones.
+Productos + cotizaciones funcionan completamente. Todo lo anterior continúa activo.
+Todavía NO hay: ventas, facturas, pagos, inventario, tickets, campañas,
+automatizaciones, reportes avanzados, forecast, API, webhooks ni PDF profesional.
