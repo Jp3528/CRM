@@ -12,6 +12,7 @@ use App\Models\Quote;
 use App\Models\QuoteItem;
 use App\Models\User;
 use App\Services\Quotes\QuoteService;
+use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -41,7 +42,10 @@ class QuoteController extends Controller
             : 'created_at';
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $user = $request->user();
+
         $quotes = Quote::query()
+            ->visibleTo($user)
             ->with([
                 'company:id,trade_name', 'contact:id,first_name,last_name',
                 'opportunity:id,name', 'owner:id,name',
@@ -70,7 +74,7 @@ class QuoteController extends Controller
                 'direction' => $direction,
             ],
             'statuses' => Quote::STATUSES,
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers($user),
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'currencies' => Opportunity::CURRENCIES,
         ]);
@@ -116,6 +120,9 @@ class QuoteController extends Controller
             'editable' => in_array($quote->status, Quote::EDITABLE_STATUSES, true),
             'sale' => $quote->sale()->first(['id', 'number', 'status', 'total', 'currency']),
             'canCreateSale' => $user->can('create', \App\Models\Sale::class),
+            'canViewCompany' => DataScope::canViewModel($user, $quote->company),
+            'canViewContact' => DataScope::canViewModel($user, $quote->contact),
+            'canViewOpportunity' => DataScope::canViewModel($user, $quote->opportunity),
         ]);
     }
 
@@ -131,7 +138,7 @@ class QuoteController extends Controller
         $quote->load(['items' => fn ($q) => $q->orderBy('position')]);
 
         return view('quotes.edit', array_merge(
-            $this->formData(),
+            $this->formData($quote),
             ['quote' => $quote]
         ));
     }
@@ -197,7 +204,7 @@ class QuoteController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function formData(): array
+    private function formData(?Quote $quote = null): array
     {
         $products = Product::where('status', 'active')->orderBy('name')->get(['id', 'sku', 'name', 'unit', 'price', 'tax_rate']);
 
@@ -205,7 +212,7 @@ class QuoteController extends Controller
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'contacts' => Contact::with('company:id,trade_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
             'opportunities' => Opportunity::with('company:id,trade_name')->where('status', 'open')->orderBy('name')->get(['id', 'name', 'company_id', 'currency']),
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers(auth()->user(), $quote?->owner_id),
             'currencies' => Opportunity::CURRENCIES,
             'products' => $products,
             'productCatalog' => $products->mapWithKeys(fn ($p) => [$p->id => [

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ConvertSaleToInvoiceRequest;
 use App\Models\Sale;
 use App\Services\Sales\InvoiceCreationService;
+use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -15,6 +16,7 @@ class SaleToInvoiceController extends Controller
     public function create(Sale $sale): View|RedirectResponse
     {
         $this->authorize('create', \App\Models\Invoice::class);
+        abort_unless(DataScope::canViewModel(request()->user(), $sale), 403);
 
         $sale->load(['company:id,trade_name', 'items' => fn ($q) => $q->orderBy('position')]);
 
@@ -34,6 +36,7 @@ class SaleToInvoiceController extends Controller
     public function store(ConvertSaleToInvoiceRequest $request, Sale $sale): RedirectResponse
     {
         $this->authorize('create', \App\Models\Invoice::class);
+        abort_unless(DataScope::canViewModel($request->user(), $sale), 403);
 
         $invoice = $this->service->fromSale($sale, $request->user(), $request->validated());
 

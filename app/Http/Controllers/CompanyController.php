@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
 use App\Models\Tag;
 use App\Models\User;
+use App\Support\DataScope;
 use App\Support\SyncsTags;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,9 +36,12 @@ class CompanyController extends Controller
             : 'created_at';
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $user = $request->user();
+
         $companies = Company::query()
+            ->visibleTo($user)
             ->with(['owner:id,name', 'tags:id,name,slug,color'])
-            ->withCount('contacts')
+            ->withCount(['contacts' => fn ($q) => $q->visibleTo($user)])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
             ->industry($validated['industry'] ?? null)
@@ -63,7 +67,7 @@ class CompanyController extends Controller
                 ->whereNotNull('industry')->orderBy('industry')->pluck('industry'),
             'countries' => Company::query()->select('country')->distinct()
                 ->whereNotNull('country')->orderBy('country')->pluck('country'),
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers($user),
         ]);
     }
 
@@ -89,26 +93,29 @@ class CompanyController extends Controller
     {
         $this->authorize('view', $company);
 
+        $viewer = request()->user();
+
+        // Relaciones filtradas por alcance: nada fuera del scope del usuario.
         $company->load([
             'owner:id,name,email',
             'tags:id,name,slug,color',
-            'contacts' => fn ($q) => $q->with('owner:id,name')->orderBy('first_name'),
-            'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
-            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
-            'quotes' => fn ($q) => $q->latest()->limit(5),
-            'sales' => fn ($q) => $q->latest()->limit(5),
-            'invoices' => fn ($q) => $q->latest()->limit(5),
-            'tickets' => fn ($q) => $q->latest()->limit(5),
-        ])->loadCount('contacts');
+            'contacts' => fn ($q) => $q->visibleTo($viewer)->with('owner:id,name')->orderBy('first_name'),
+            'activities' => fn ($q) => $q->visibleTo($viewer)->with('user:id,name')->latest()->limit(10),
+            'tasks' => fn ($q) => $q->visibleTo($viewer)->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
+            'quotes' => fn ($q) => $q->visibleTo($viewer)->latest()->limit(5),
+            'sales' => fn ($q) => $q->visibleTo($viewer)->latest()->limit(5),
+            'invoices' => fn ($q) => $q->visibleTo($viewer)->latest()->limit(5),
+            'tickets' => fn ($q) => $q->visibleTo($viewer)->latest()->limit(5),
+        ])->loadCount(['contacts' => fn ($q) => $q->visibleTo($viewer)]);
 
         return view('companies.show', [
             'company' => $company,
-            'canUpdate' => request()->user()->can('update', $company),
-            'canCreateContact' => request()->user()->can('create', \App\Models\Contact::class),
-            'canViewQuotes' => request()->user()->can('viewAny', \App\Models\Quote::class),
-            'canViewSales' => request()->user()->can('viewAny', \App\Models\Sale::class),
-            'canViewInvoices' => request()->user()->can('viewAny', \App\Models\Invoice::class),
-            'canViewTickets' => request()->user()->can('viewAny', \App\Models\Ticket::class),
+            'canUpdate' => $viewer->can('update', $company),
+            'canCreateContact' => $viewer->can('create', \App\Models\Contact::class),
+            'canViewQuotes' => $viewer->can('viewAny', \App\Models\Quote::class),
+            'canViewSales' => $viewer->can('viewAny', \App\Models\Sale::class),
+            'canViewInvoices' => $viewer->can('viewAny', \App\Models\Invoice::class),
+            'canViewTickets' => $viewer->can('viewAny', \App\Models\Ticket::class),
         ]);
     }
 
@@ -159,15 +166,8 @@ class CompanyController extends Controller
      */
     private function formData(?Company $company): array
     {
-        $ownerQuery = User::where('status', 'active')->orderBy('name');
-        if ($company?->owner_id) {
-            $ownerQuery = User::where(
-                fn ($q) => $q->where('status', 'active')->orWhere('id', $company->owner_id)
-            )->orderBy('name');
-        }
-
         return [
-            'owners' => $ownerQuery->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers(auth()->user(), $company?->owner_id),
             'allTags' => Tag::orderBy('name')->get(['id', 'name']),
             'statuses' => Company::STATUSES,
         ];

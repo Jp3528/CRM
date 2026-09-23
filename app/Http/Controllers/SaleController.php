@@ -12,6 +12,7 @@ use App\Models\QuoteItem;
 use App\Models\Sale;
 use App\Models\User;
 use App\Services\Sales\SaleCreationService;
+use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -41,7 +42,10 @@ class SaleController extends Controller
             : 'created_at';
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $user = $request->user();
+
         $sales = Sale::query()
+            ->visibleTo($user)
             ->with([
                 'company:id,trade_name', 'contact:id,first_name,last_name',
                 'opportunity:id,name', 'quote:id,number', 'owner:id,name',
@@ -70,7 +74,7 @@ class SaleController extends Controller
                 'direction' => $direction,
             ],
             'statuses' => Sale::STATUSES,
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers($user),
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'currencies' => Opportunity::CURRENCIES,
         ]);
@@ -113,6 +117,10 @@ class SaleController extends Controller
             'editable' => $sale->status === 'draft',
             'quoteSourced' => $sale->quote_id !== null,
             'canCreateInvoice' => $user->can('create', \App\Models\Invoice::class),
+            'canViewCompany' => DataScope::canViewModel($user, $sale->company),
+            'canViewContact' => DataScope::canViewModel($user, $sale->contact),
+            'canViewOpportunity' => DataScope::canViewModel($user, $sale->opportunity),
+            'canViewQuote' => DataScope::canViewModel($user, $sale->quote),
         ]);
     }
 
@@ -128,7 +136,7 @@ class SaleController extends Controller
         $sale->load(['items' => fn ($q) => $q->orderBy('position')]);
 
         return view('sales.edit', array_merge(
-            $this->formData(),
+            $this->formData($sale),
             ['sale' => $sale]
         ));
     }
@@ -166,13 +174,13 @@ class SaleController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function formData(): array
+    private function formData(?Sale $sale = null): array
     {
         return [
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'contacts' => Contact::with('company:id,trade_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
             'opportunities' => Opportunity::with('company:id,trade_name')->where('status', 'open')->orderBy('name')->get(['id', 'name', 'company_id']),
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers(auth()->user(), $sale?->owner_id),
             'currencies' => Opportunity::CURRENCIES,
             'products' => Product::where('status', 'active')->orderBy('name')->get(['id', 'sku', 'name', 'unit', 'price', 'tax_rate']),
             'productCatalog' => Product::where('status', 'active')->orderBy('name')->get()->mapWithKeys(fn ($p) => [$p->id => [

@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Sale;
 use App\Models\User;
+use App\Support\DataScope;
 
 class SalePolicy
 {
@@ -14,7 +15,8 @@ class SalePolicy
 
     public function view(User $user, Sale $sale): bool
     {
-        return $user->hasPermission('sales.view');
+        return $user->hasPermission('sales.view')
+            && DataScope::canAccessOwner($user, $sale->owner);
     }
 
     public function create(User $user): bool
@@ -24,11 +26,13 @@ class SalePolicy
 
     public function update(User $user, Sale $sale): bool
     {
-        return $user->hasPermission('sales.update');
+        return $user->hasPermission('sales.update')
+            && DataScope::canAccessOwner($user, $sale->owner);
     }
 
     public function delete(User $user, Sale $sale): bool
     {
-        return $user->hasPermission('sales.delete');
+        return $user->hasPermission('sales.delete')
+            && DataScope::canAccessOwner($user, $sale->owner);
     }
 }

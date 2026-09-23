@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Lead;
 use App\Models\User;
+use App\Support\DataScope;
 
 class LeadPolicy
 {
@@ -14,7 +15,8 @@ class LeadPolicy
 
     public function view(User $user, Lead $lead): bool
     {
-        return $user->hasPermission('leads.view');
+        return $user->hasPermission('leads.view')
+            && DataScope::canAccessOwner($user, $lead->owner);
     }
 
     public function create(User $user): bool
@@ -24,16 +26,19 @@ class LeadPolicy
 
     public function update(User $user, Lead $lead): bool
     {
-        return $user->hasPermission('leads.update');
+        return $user->hasPermission('leads.update')
+            && DataScope::canAccessOwner($user, $lead->owner);
     }
 
     public function delete(User $user, Lead $lead): bool
     {
-        return $user->hasPermission('leads.delete');
+        return $user->hasPermission('leads.delete')
+            && DataScope::canAccessOwner($user, $lead->owner);
     }
 
     public function convert(User $user, Lead $lead): bool
     {
-        return $user->hasPermission('leads.convert');
+        return $user->hasPermission('leads.convert')
+            && DataScope::canAccessOwner($user, $lead->owner);
     }
 }

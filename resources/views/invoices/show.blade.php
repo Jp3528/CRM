@@ -54,9 +54,9 @@
 
     <x-card title="Factura {{ $invoice->number }}">
         <dl class="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-            <div><dt class="text-slate-500">Venta origen</dt><dd class="font-medium">@if ($invoice->sale)<a href="{{ route('sales.show', $invoice->sale) }}" class="font-mono hover:underline">{{ $invoice->sale->number }}</a>@else — @endif</dd></div>
-            <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($invoice->company)<a href="{{ route('companies.show', $invoice->company) }}" class="hover:underline">{{ $invoice->company_name ?? $invoice->company->trade_name }}</a>@else {{ $invoice->company_name ?? '—' }}@endif</dd></div>
-            <div><dt class="text-slate-500">Contacto</dt><dd class="font-medium">@if ($invoice->contact)<a href="{{ route('contacts.show', $invoice->contact) }}" class="hover:underline">{{ $invoice->contact_name ?? $invoice->contact->first_name }}</a>@else {{ $invoice->contact_name ?? '—' }}@endif</dd></div>
+            <div><dt class="text-slate-500">Venta origen</dt><dd class="font-medium">@if ($invoice->sale && $canViewSale)<a href="{{ route('sales.show', $invoice->sale) }}" class="font-mono hover:underline">{{ $invoice->sale->number }}</a>@else — @endif</dd></div>
+            <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($invoice->company && $canViewCompany)<a href="{{ route('companies.show', $invoice->company) }}" class="hover:underline">{{ $invoice->company_name ?? $invoice->company->trade_name }}</a>@else {{ $invoice->company_name ?? '—' }}@endif</dd></div>
+            <div><dt class="text-slate-500">Contacto</dt><dd class="font-medium">@if ($invoice->contact && $canViewContact)<a href="{{ route('contacts.show', $invoice->contact) }}" class="hover:underline">{{ $invoice->contact_name ?? $invoice->contact->first_name }}</a>@else {{ $invoice->contact_name ?? '—' }}@endif</dd></div>
             <div><dt class="text-slate-500">Responsable</dt><dd class="font-medium">{{ $invoice->owner?->name ?? '—' }}</dd></div>
             <div><dt class="text-slate-500">Moneda</dt><dd class="font-medium">{{ $invoice->currency }}</dd></div>
             <div><dt class="text-slate-500">Emisión</dt><dd class="font-medium">{{ $invoice->issue_date?->format('Y-m-d') ?? '—' }}</dd></div>

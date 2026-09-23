@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DataScope;
 use Database\Factories\LeadFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -137,6 +138,16 @@ class Lead extends Model
         }
 
         return $query->where('leads.owner_id', $ownerId);
+    }
+
+    /**
+     * Alcance de datos (Fase 9.5): filtra por propietario/equipo según rol.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        return DataScope::scopeOwned($query, $user);
     }
 
     /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */

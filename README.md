@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 9: Tickets de soporte.
+CRM empresarial web construido con Laravel. Fase 9.5: DataScope (permiso + alcance).
 
 ## Stack
 
@@ -357,6 +357,33 @@ Permisos `sales.*` e `invoices.*` idempotentes; `SalePolicy` + `InvoicePolicy`.
   factura" en venta confirmada/completada, listas en oportunidad/empresa/contacto,
   uso en producto (quotes/ventas/facturas), dashboard (recientes + pendientes + vencidas).
 
+## Fase 9.5 — DataScope: permiso + alcance de datos
+
+Segunda capa de autorización sin reemplazar RBAC, sin multi-tenancy y sin
+jerarquías inventadas (Gerente/Supervisor = mismo `team_id`).
+
+- `app/Support/DataScope.php` centraliza todo (sin `if admin/team/owner` por Policy):
+  niveles `global` (Superadministrador, Administrador), `team` (Gerente comercial,
+  Supervisor: propio + mismo equipo no nulo), `own` (Vendedor, Soporte, Consulta),
+  `legacy` (sin rol de alcance → comportamiento histórico global, compatibilidad).
+  Memoización por objeto (`WeakMap`), todo en SQL (WHERE/IN, sin filtrado PHP).
+- Equipo null no agrupa: dos usuarios sin equipo no acceden entre sí (test).
+- Soporte en tickets: propios + sin asignar (cola); nunca los de otro agente.
+  Equipo: equipo + cola. Vendedor/consulta: asignados o creados por él.
+- Consulta puro: solo lectura vía `Gate::before` (deniega create/update/delete/
+  move/convert aunque existan permisos por error).
+- Productos: catálogo global (solo permiso).
+- `scopeVisibleTo` en 9 modelos + `visibleTo()` en índices, Kanban (columnas y
+  totales), dashboard (todos los widgets) y eager loads de fichas (incl. conteos).
+- Policies: permiso funcional + alcance (contacto exige además empresa visible).
+- Enlaces belongsTo ocultos (nombre incluido) si el destino está fuera de alcance;
+  creación contextual (tareas/actividades) valida visibilidad (403, sin oráculos).
+- Conversiones (lead/quote/sale) verifican alcance del origen (403, sin parciales).
+- Filtros de responsable limitados por alcance (`filterableUsers`, con preservación
+  del valor existente en edición).
+- Migración `000025`: índices `users.team_id`, `tasks.created_by`,
+  `tickets.created_by` (WHERE frecuentes del scope).
+
 ## Tests
 
 ```sh
@@ -411,14 +438,20 @@ CRUD tickets, 403 (10 ops), validación + solicitante + coherencia, conversació
 (reply/nota/relojes/cierre/XSS), transiciones completas + inválidas + no-op,
 métricas deterministas, integraciones y dashboard.
 
++ Fase 9 (`tests/Feature/PhaseNineTest`, 23 tests) + auditoría posterior.
++ Fase 9.5 (`tests/Feature/DataScopeTest`, 18 tests): legado global, IDOR ×10
+módulos, escrituras, matriz vendedor/supervisor/admin, null-team, Kanban, dashboard,
+conversiones con alcance, fugas en relaciones, matriz soporte, consulta read-only,
+actividades, tareas, creación contextual, filtros de responsable.
+
 ## Frontend
 
 ```sh
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 9)
+## Alcance actual (Fase 9.5)
 
-Tickets de soporte funcionan completamente. Todo lo anterior continúa activo.
-Sin email real, portal de cliente, SLA automatizado, base de conocimiento, chat,
-automatizaciones, IA, reportes avanzados, API ni integraciones externas.
+RBAC + DataScope activos. Sin multi-tenancy, jerarquías ni Fase 10. Todavía NO hay:
+campañas, automatizaciones, reportes, API, webhooks, integraciones externas, email,
+notificaciones avanzadas ni base de conocimiento.

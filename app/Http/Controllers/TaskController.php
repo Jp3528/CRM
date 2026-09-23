@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
 use App\Models\User;
+use App\Support\DataScope;
 use App\Support\RelatedEntity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,10 @@ class TaskController extends Controller
             : 'created_at';
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $user = $request->user();
+
         $query = Task::query()
+            ->visibleTo($user)
             ->with(['assignee:id,name', 'creator:id,name'])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
@@ -68,7 +72,7 @@ class TaskController extends Controller
             'statuses' => Task::STATUSES,
             'priorities' => Task::PRIORITIES,
             'relatedTypes' => RelatedEntity::keys(),
-            'users' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'users' => DataScope::filterableUsers($user),
         ]);
     }
 
@@ -85,6 +89,8 @@ class TaskController extends Controller
     public function store(StoreTaskRequest $request): RedirectResponse
     {
         $data = $request->validated();
+
+        $this->assertRelatedVisible($request->user(), $data);
 
         $task = Task::create([
             'title' => $data['title'],
@@ -105,11 +111,14 @@ class TaskController extends Controller
     {
         $this->authorize('view', $task);
 
+        $viewer = request()->user();
+
         $task->load(['assignee:id,name,email', 'creator:id,name', 'taskable']);
 
         return view('tasks.show', [
             'task' => $task,
-            'canUpdate' => request()->user()->can('update', $task),
+            'canUpdate' => $viewer->can('update', $task),
+            'canViewRelated' => DataScope::canViewModel($viewer, $task->taskable),
         ]);
     }
 
@@ -134,6 +143,8 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
     {
         $data = $request->validated();
+
+        $this->assertRelatedVisible($request->user(), $data);
 
         // Invariantes de estado/fechas, igual que en complete/reopen/cancel.
         $completedAt = $task->completed_at;
@@ -214,19 +225,28 @@ class TaskController extends Controller
     }
 
     /**
+     * La entidad relacionada debe ser visible para el autor (sin oráculos IDOR).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function assertRelatedVisible(User $actor, array $data): void
+    {
+        if (empty($data['related_type'])) {
+            return;
+        }
+
+        $related = RelatedEntity::findOrFail($data['related_type'], $data['related_id']);
+
+        abort_unless(DataScope::canViewModel($actor, $related), 403);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function formData(?Task $task = null): array
     {
-        $assignedQuery = User::where('status', 'active')->orderBy('name');
-        if ($task?->assigned_to) {
-            $assignedQuery = User::where(
-                fn ($q) => $q->where('status', 'active')->orWhere('id', $task->assigned_to)
-            )->orderBy('name');
-        }
-
         return [
-            'assignees' => $assignedQuery->get(['id', 'name']),
+            'assignees' => DataScope::filterableUsers(auth()->user(), $task?->assigned_to),
             'statuses' => $task ? Task::STATUSES : ['pending', 'in_progress'],
             'priorities' => Task::PRIORITIES,
             'relatedTypes' => RelatedEntity::keys(),

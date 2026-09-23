@@ -9,6 +9,7 @@ use App\Models\Contact;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
+use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +54,10 @@ class TicketController extends Controller
             : 'updated_at';
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $user = $request->user();
+
         $tickets = Ticket::query()
+            ->visibleTo($user)
             ->with(['company:id,trade_name', 'contact:id,first_name,last_name', 'category:id,name', 'assignee:id,name'])
             ->search($validated['search'] ?? null)
             ->status($status)
@@ -84,7 +88,7 @@ class TicketController extends Controller
             'priorities' => Ticket::PRIORITIES,
             'channels' => Ticket::CHANNELS,
             'categories' => TicketCategory::orderBy('name')->get(['id', 'name']),
-            'users' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'users' => DataScope::filterableUsers($user),
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
         ]);
     }
@@ -145,6 +149,8 @@ class TicketController extends Controller
     {
         $this->authorize('view', $ticket);
 
+        $user = request()->user();
+
         $ticket->load([
             'company:id,trade_name',
             'contact:id,first_name,last_name,company_id',
@@ -154,12 +160,12 @@ class TicketController extends Controller
             'messages' => fn ($q) => $q->with(['user:id,name', 'contact:id,first_name,last_name'])->orderBy('created_at'),
         ]);
 
-        $user = request()->user();
-
         return view('tickets.show', [
             'ticket' => $ticket,
             'canUpdate' => $user->can('update', $ticket),
             'canDelete' => $user->can('delete', $ticket),
+            'canViewCompany' => DataScope::canViewModel($user, $ticket->company),
+            'canViewContact' => DataScope::canViewModel($user, $ticket->contact),
         ]);
     }
 
@@ -245,18 +251,11 @@ class TicketController extends Controller
      */
     private function formData(?Ticket $ticket = null): array
     {
-        $assignedQuery = User::where('status', 'active')->orderBy('name');
-        if ($ticket?->assigned_to) {
-            $assignedQuery = User::where(
-                fn ($q) => $q->where('status', 'active')->orWhere('id', $ticket->assigned_to)
-            )->orderBy('name');
-        }
-
         return [
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'contacts' => Contact::with('company:id,trade_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
             'categories' => TicketCategory::orderBy('name')->get(['id', 'name']),
-            'assignees' => $assignedQuery->get(['id', 'name']),
+            'assignees' => DataScope::filterableUsers(auth()->user(), $ticket?->assigned_to),
             'priorities' => Ticket::PRIORITIES,
             'channels' => Ticket::CHANNELS,
         ];

@@ -61,9 +61,9 @@
 
         <x-card title="Relaciones">
             <dl class="grid grid-cols-2 gap-3 text-sm">
-                <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($opportunity->company)<a href="{{ route('companies.show', $opportunity->company) }}" class="hover:underline">{{ $opportunity->company->trade_name }}</a>@else — @endif</dd></div>
-                <div><dt class="text-slate-500">Contacto</dt><dd class="font-medium">@if ($opportunity->contact)<a href="{{ route('contacts.show', $opportunity->contact) }}" class="hover:underline">{{ $opportunity->contact->first_name }} {{ $opportunity->contact->last_name }}</a>@else — @endif</dd></div>
-                <div><dt class="text-slate-500">Lead origen</dt><dd class="font-medium">@if ($opportunity->lead)<a href="{{ route('leads.show', $opportunity->lead) }}" class="hover:underline">{{ $opportunity->lead->first_name }} {{ $opportunity->lead->last_name }}</a>@else — @endif</dd></div>
+                <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($opportunity->company && $canViewCompany)<a href="{{ route('companies.show', $opportunity->company) }}" class="hover:underline">{{ $opportunity->company->trade_name }}</a>@else — @endif</dd></div>
+                <div><dt class="text-slate-500">Contacto</dt><dd class="font-medium">@if ($opportunity->contact && $canViewContact)<a href="{{ route('contacts.show', $opportunity->contact) }}" class="hover:underline">{{ $opportunity->contact->first_name }} {{ $opportunity->contact->last_name }}</a>@else — @endif</dd></div>
+                <div><dt class="text-slate-500">Lead origen</dt><dd class="font-medium">@if ($opportunity->lead && $canViewLead)<a href="{{ route('leads.show', $opportunity->lead) }}" class="hover:underline">{{ $opportunity->lead->first_name }} {{ $opportunity->lead->last_name }}</a>@else — @endif</dd></div>
             </dl>
         </x-card>
     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DataScope;
 use Database\Factories\TicketFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -180,6 +181,16 @@ class Ticket extends Model
         }
 
         return $query->where('tickets.assigned_to', $userId);
+    }
+
+    /**
+     * Alcance de datos (Fase 9.5): regla de soporte por rol.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        return DataScope::scopeTickets($query, $user);
     }
 
     /** @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query */

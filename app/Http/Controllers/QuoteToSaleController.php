@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ConvertQuoteToSaleRequest;
 use App\Models\Quote;
 use App\Services\Sales\SaleCreationService;
+use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -15,6 +16,7 @@ class QuoteToSaleController extends Controller
     public function create(Quote $quote): View|RedirectResponse
     {
         $this->authorize('create', \App\Models\Sale::class);
+        abort_unless(DataScope::canViewModel(request()->user(), $quote), 403);
 
         $quote->load(['company:id,trade_name', 'items' => fn ($q) => $q->orderBy('position')]);
 
@@ -30,13 +32,14 @@ class QuoteToSaleController extends Controller
 
         return view('quotes.convert-to-sale', [
             'quote' => $quote,
-            'owners' => \App\Models\User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => \App\Support\DataScope::filterableUsers(request()->user()),
         ]);
     }
 
     public function store(ConvertQuoteToSaleRequest $request, Quote $quote): RedirectResponse
     {
         $this->authorize('create', \App\Models\Sale::class);
+        abort_unless(DataScope::canViewModel($request->user(), $quote), 403);
 
         $sale = $this->service->fromQuote($quote, $request->user(), $request->validated());
 

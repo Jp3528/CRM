@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Support\DataScope;
 
 class CompanyPolicy
 {
@@ -14,7 +15,8 @@ class CompanyPolicy
 
     public function view(User $user, Company $company): bool
     {
-        return $user->hasPermission('companies.view');
+        return $user->hasPermission('companies.view')
+            && DataScope::canAccessOwner($user, $company->owner);
     }
 
     public function create(User $user): bool
@@ -24,11 +26,13 @@ class CompanyPolicy
 
     public function update(User $user, Company $company): bool
     {
-        return $user->hasPermission('companies.update');
+        return $user->hasPermission('companies.update')
+            && DataScope::canAccessOwner($user, $company->owner);
     }
 
     public function delete(User $user, Company $company): bool
     {
-        return $user->hasPermission('companies.delete');
+        return $user->hasPermission('companies.delete')
+            && DataScope::canAccessOwner($user, $company->owner);
     }
 }

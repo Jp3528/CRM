@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateLeadRequest;
 use App\Models\Lead;
 use App\Models\Tag;
 use App\Models\User;
+use App\Support\DataScope;
 use App\Support\SyncsTags;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,7 +38,10 @@ class LeadController extends Controller
             : 'created_at';
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $user = $request->user();
+
         $leads = Lead::query()
+            ->visibleTo($user)
             ->with(['owner:id,name', 'tags:id,name,slug,color'])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
@@ -64,7 +68,7 @@ class LeadController extends Controller
             ],
             'statuses' => Lead::STATUSES,
             'sources' => Lead::SOURCES,
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers($user),
         ]);
     }
 
@@ -90,22 +94,24 @@ class LeadController extends Controller
     {
         $this->authorize('view', $lead);
 
+        $user = request()->user();
+
         $lead->load([
             'owner:id,name,email',
             'tags:id,name,slug,color',
             'convertedCompany:id,trade_name',
             'convertedContact:id,first_name,last_name',
-            'opportunities' => fn ($q) => $q->with('stage:id,name')->latest()->limit(5),
-            'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
-            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
+            'opportunities' => fn ($q) => $q->visibleTo($user)->with('stage:id,name')->latest()->limit(5),
+            'activities' => fn ($q) => $q->visibleTo($user)->with('user:id,name')->latest()->limit(10),
+            'tasks' => fn ($q) => $q->visibleTo($user)->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
         ]);
-
-        $user = request()->user();
 
         return view('leads.show', [
             'lead' => $lead,
             'canUpdate' => $user->can('update', $lead),
             'canConvert' => $lead->status === 'qualified' && $user->can('convert', $lead),
+            'canViewConvertedCompany' => DataScope::canViewModel($user, $lead->convertedCompany),
+            'canViewConvertedContact' => DataScope::canViewModel($user, $lead->convertedContact),
         ]);
     }
 
@@ -179,15 +185,8 @@ class LeadController extends Controller
      */
     private function formData(?Lead $lead): array
     {
-        $ownerQuery = User::where('status', 'active')->orderBy('name');
-        if ($lead?->owner_id) {
-            $ownerQuery = User::where(
-                fn ($q) => $q->where('status', 'active')->orWhere('id', $lead->owner_id)
-            )->orderBy('name');
-        }
-
         return [
-            'owners' => $ownerQuery->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers(auth()->user(), $lead?->owner_id),
             'allTags' => Tag::orderBy('name')->get(['id', 'name']),
             'statuses' => Lead::EDITABLE_STATUSES,
             'sources' => Lead::SOURCES,

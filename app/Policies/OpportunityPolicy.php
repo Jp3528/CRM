@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Opportunity;
 use App\Models\User;
+use App\Support\DataScope;
 
 class OpportunityPolicy
 {
@@ -14,7 +15,8 @@ class OpportunityPolicy
 
     public function view(User $user, Opportunity $opportunity): bool
     {
-        return $user->hasPermission('opportunities.view');
+        return $user->hasPermission('opportunities.view')
+            && DataScope::canAccessOwner($user, $opportunity->owner);
     }
 
     public function create(User $user): bool
@@ -24,20 +26,19 @@ class OpportunityPolicy
 
     public function update(User $user, Opportunity $opportunity): bool
     {
-        return $user->hasPermission('opportunities.update');
+        return $user->hasPermission('opportunities.update')
+            && DataScope::canAccessOwner($user, $opportunity->owner);
     }
 
     public function delete(User $user, Opportunity $opportunity): bool
     {
-        return $user->hasPermission('opportunities.delete');
+        return $user->hasPermission('opportunities.delete')
+            && DataScope::canAccessOwner($user, $opportunity->owner);
     }
 
-    /**
-     * Mover etapa / ganar / perder / reabrir. Sin permiso separado:
-     * quien puede actualizar puede mover (se evita multiplicar permisos).
-     */
     public function move(User $user, Opportunity $opportunity): bool
     {
-        return $user->hasPermission('opportunities.update');
+        return $user->hasPermission('opportunities.update')
+            && DataScope::canAccessOwner($user, $opportunity->owner);
     }
 }

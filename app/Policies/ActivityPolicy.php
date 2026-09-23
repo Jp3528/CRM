@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Activity;
 use App\Models\User;
+use App\Support\DataScope;
 
 class ActivityPolicy
 {
@@ -14,7 +15,8 @@ class ActivityPolicy
 
     public function view(User $user, Activity $activity): bool
     {
-        return $user->hasPermission('activities.view');
+        return $user->hasPermission('activities.view')
+            && DataScope::canAccessActivity($user, $activity);
     }
 
     public function create(User $user): bool
@@ -24,11 +26,13 @@ class ActivityPolicy
 
     public function update(User $user, Activity $activity): bool
     {
-        return $user->hasPermission('activities.update');
+        return $user->hasPermission('activities.update')
+            && DataScope::canAccessActivity($user, $activity);
     }
 
     public function delete(User $user, Activity $activity): bool
     {
-        return $user->hasPermission('activities.delete');
+        return $user->hasPermission('activities.delete')
+            && DataScope::canAccessActivity($user, $activity);
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Requests\StoreActivityRequest;
 use App\Http\Requests\UpdateActivityRequest;
 use App\Models\Activity;
 use App\Models\User;
+use App\Support\DataScope;
 use App\Support\RelatedEntity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,10 @@ class ActivityController extends Controller
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $sortColumn = $sort === 'scheduled_at' ? 'activities.scheduled_at' : "activities.{$sort}";
 
+        $user = $request->user();
+
         $activities = Activity::query()
+            ->visibleTo($user)
             ->with(['user:id,name'])
             ->search($validated['search'] ?? null)
             ->type($validated['type'] ?? null)
@@ -59,7 +63,7 @@ class ActivityController extends Controller
             ],
             'types' => array_unique(array_merge(Activity::MANUAL_TYPES, Activity::SYSTEM_TYPES)),
             'relatedTypes' => RelatedEntity::keys(),
-            'users' => User::orderBy('name')->get(['id', 'name']),
+            'users' => DataScope::filterableUsers($user),
         ]);
     }
 
@@ -80,6 +84,11 @@ class ActivityController extends Controller
     {
         $data = $request->validated();
 
+        if (! empty($data['related_type'])) {
+            $related = RelatedEntity::findOrFail($data['related_type'], $data['related_id']);
+            abort_unless(DataScope::canViewModel($request->user(), $related), 403);
+        }
+
         $activity = Activity::create([
             'type' => $data['type'],
             'subject' => $data['subject'],
@@ -99,12 +108,15 @@ class ActivityController extends Controller
     {
         $this->authorize('view', $activity);
 
+        $viewer = request()->user();
+
         $activity->load(['user:id,name,email', 'subjectable']);
 
         return view('activities.show', [
             'activity' => $activity,
-            'canUpdate' => ! $activity->is_system && request()->user()->can('update', $activity),
-            'canDelete' => ! $activity->is_system && request()->user()->can('delete', $activity),
+            'canUpdate' => ! $activity->is_system && $viewer->can('update', $activity),
+            'canDelete' => ! $activity->is_system && $viewer->can('delete', $activity),
+            'canViewRelated' => DataScope::canViewModel($viewer, $activity->subjectable),
         ]);
     }
 

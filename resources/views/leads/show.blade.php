@@ -10,8 +10,8 @@
     @if ($lead->isConverted())
         <div class="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
             Lead convertido el {{ $lead->converted_at?->format('Y-m-d H:i') }}.
-            @if ($lead->convertedCompany)<a href="{{ route('companies.show', $lead->convertedCompany) }}" class="font-medium hover:underline">Ver empresa: {{ $lead->convertedCompany->trade_name }}</a>@endif
-            @if ($lead->convertedContact)<span class="mx-1">·</span><a href="{{ route('contacts.show', $lead->convertedContact) }}" class="font-medium hover:underline">Ver contacto: {{ $lead->convertedContact->full_name }}</a>@endif
+            @if ($lead->convertedCompany && $canViewConvertedCompany)<a href="{{ route('companies.show', $lead->convertedCompany) }}" class="font-medium hover:underline">Ver empresa: {{ $lead->convertedCompany->trade_name }}</a>@endif
+            @if ($lead->convertedContact && $canViewConvertedContact)<span class="mx-1">·</span><a href="{{ route('contacts.show', $lead->convertedContact) }}" class="font-medium hover:underline">Ver contacto: {{ $lead->convertedContact->full_name }}</a>@endif
             @if ($lead->opportunities->isNotEmpty())<span class="mx-1">·</span><span>{{ $lead->opportunities->count() }} oportunidad(es) vinculada(s).</span>@endif
         </div>
     @endif

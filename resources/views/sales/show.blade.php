@@ -56,10 +56,10 @@
 
     <x-card title="Venta {{ $sale->number }}">
         <dl class="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-            <div><dt class="text-slate-500">Cotización origen</dt><dd class="font-medium">@if ($sale->quote)<a href="{{ route('quotes.show', $sale->quote) }}" class="font-mono hover:underline">{{ $sale->quote->number }}</a>@else — @endif</dd></div>
-            <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($sale->company)<a href="{{ route('companies.show', $sale->company) }}" class="hover:underline">{{ $sale->company->trade_name }}</a>@else — @endif</dd></div>
-            <div><dt class="text-slate-500">Contacto</dt><dd class="font-medium">@if ($sale->contact)<a href="{{ route('contacts.show', $sale->contact) }}" class="hover:underline">{{ $sale->contact->first_name }} {{ $sale->contact->last_name }}</a>@else — @endif</dd></div>
-            <div><dt class="text-slate-500">Oportunidad</dt><dd class="font-medium">@if ($sale->opportunity)<a href="{{ route('opportunities.show', $sale->opportunity) }}" class="hover:underline">{{ $sale->opportunity->name }}</a>@else — @endif</dd></div>
+            <div><dt class="text-slate-500">Cotización origen</dt><dd class="font-medium">@if ($sale->quote && $canViewQuote)<a href="{{ route('quotes.show', $sale->quote) }}" class="font-mono hover:underline">{{ $sale->quote->number }}</a>@else — @endif</dd></div>
+            <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($sale->company && $canViewCompany)<a href="{{ route('companies.show', $sale->company) }}" class="hover:underline">{{ $sale->company->trade_name }}</a>@else — @endif</dd></div>
+            <div><dt class="text-slate-500">Contacto</dt><dd class="font-medium">@if ($sale->contact && $canViewContact)<a href="{{ route('contacts.show', $sale->contact) }}" class="hover:underline">{{ $sale->contact->first_name }} {{ $sale->contact->last_name }}</a>@else — @endif</dd></div>
+            <div><dt class="text-slate-500">Oportunidad</dt><dd class="font-medium">@if ($sale->opportunity && $canViewOpportunity)<a href="{{ route('opportunities.show', $sale->opportunity) }}" class="hover:underline">{{ $sale->opportunity->name }}</a>@else — @endif</dd></div>
             <div><dt class="text-slate-500">Responsable</dt><dd class="font-medium">{{ $sale->owner?->name ?? '—' }}</dd></div>
             <div><dt class="text-slate-500">Moneda</dt><dd class="font-medium">{{ $sale->currency }}</dd></div>
             <div><dt class="text-slate-500">Fecha</dt><dd class="font-medium">{{ $sale->sale_date?->format('Y-m-d') ?? '—' }}</dd></div>

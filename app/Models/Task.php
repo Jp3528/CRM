@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DataScope;
 use App\Support\RelatedEntity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -111,6 +112,16 @@ class Task extends Model
         }
 
         return $query->where('tasks.assigned_to', $userId);
+    }
+
+    /**
+     * Alcance de datos (Fase 9.5): asignadas o creadas por el usuario/equipo.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<Task>  $query
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        return DataScope::scopeTasks($query, $user);
     }
 
     /** @param  \Illuminate\Database\Eloquent\Builder<Task>  $query */

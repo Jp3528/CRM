@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DataScope;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -142,5 +143,16 @@ class Company extends Model
         }
 
         return $query->where('owner_id', $ownerId);
+    }
+
+    /**
+     * Alcance de datos (Fase 9.5): filtra por propietario/equipo según rol.
+     * Sin N+1 ni filtrado en PHP: todo en SQL.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<Company>  $query
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        return DataScope::scopeOwned($query, $user);
     }
 }

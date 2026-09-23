@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Tag;
 use App\Models\User;
+use App\Support\DataScope;
 use App\Support\SyncsTags;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,7 +38,10 @@ class ContactController extends Controller
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $sortColumn = $sort === 'first_name' ? 'contacts.first_name' : "contacts.{$sort}";
 
+        $user = $request->user();
+
         $contacts = Contact::query()
+            ->visibleTo($user)
             ->with(['company:id,trade_name', 'owner:id,name', 'tags:id,name,slug,color'])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
@@ -63,7 +67,7 @@ class ContactController extends Controller
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'departments' => Contact::query()->select('department')->distinct()
                 ->whereNotNull('department')->orderBy('department')->pluck('department'),
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers($user),
         ]);
     }
 
@@ -92,23 +96,26 @@ class ContactController extends Controller
     {
         $this->authorize('view', $contact);
 
+        $viewer = request()->user();
+
         $contact->load([
             'company:id,trade_name,legal_name',
             'owner:id,name,email',
             'tags:id,name,slug,color',
-            'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
-            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
-            'quotes' => fn ($q) => $q->latest()->limit(5),
-            'invoices' => fn ($q) => $q->latest()->limit(5),
-            'tickets' => fn ($q) => $q->latest()->limit(5),
+            'activities' => fn ($q) => $q->visibleTo($viewer)->with('user:id,name')->latest()->limit(10),
+            'tasks' => fn ($q) => $q->visibleTo($viewer)->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
+            'quotes' => fn ($q) => $q->visibleTo($viewer)->latest()->limit(5),
+            'invoices' => fn ($q) => $q->visibleTo($viewer)->latest()->limit(5),
+            'tickets' => fn ($q) => $q->visibleTo($viewer)->latest()->limit(5),
         ]);
 
         return view('contacts.show', [
             'contact' => $contact,
-            'canUpdate' => request()->user()->can('update', $contact),
-            'canViewQuotes' => request()->user()->can('viewAny', \App\Models\Quote::class),
-            'canViewInvoices' => request()->user()->can('viewAny', \App\Models\Invoice::class),
-            'canViewTickets' => request()->user()->can('viewAny', \App\Models\Ticket::class),
+            'canUpdate' => $viewer->can('update', $contact),
+            'canViewCompany' => DataScope::canViewModel($viewer, $contact->company),
+            'canViewQuotes' => $viewer->can('viewAny', \App\Models\Quote::class),
+            'canViewInvoices' => $viewer->can('viewAny', \App\Models\Invoice::class),
+            'canViewTickets' => $viewer->can('viewAny', \App\Models\Ticket::class),
         ]);
     }
 
@@ -159,15 +166,8 @@ class ContactController extends Controller
      */
     private function formData(?Contact $contact): array
     {
-        $ownerQuery = User::where('status', 'active')->orderBy('name');
-        if ($contact?->owner_id) {
-            $ownerQuery = User::where(
-                fn ($q) => $q->where('status', 'active')->orWhere('id', $contact->owner_id)
-            )->orderBy('name');
-        }
-
         return [
-            'owners' => $ownerQuery->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers(auth()->user(), $contact?->owner_id),
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'allTags' => Tag::orderBy('name')->get(['id', 'name']),
             'statuses' => Contact::STATUSES,

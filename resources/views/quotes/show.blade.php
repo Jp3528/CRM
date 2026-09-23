@@ -53,9 +53,9 @@
 
     <x-card title="Cotización {{ $quote->number }}">
         <dl class="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-            <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($quote->company)<a href="{{ route('companies.show', $quote->company) }}" class="hover:underline">{{ $quote->company->trade_name }}</a>@else — @endif</dd></div>
-            <div><dt class="text-slate-500">Contacto</dt><dd class="font-medium">@if ($quote->contact)<a href="{{ route('contacts.show', $quote->contact) }}" class="hover:underline">{{ $quote->contact->first_name }} {{ $quote->contact->last_name }}</a>@else — @endif</dd></div>
-            <div><dt class="text-slate-500">Oportunidad</dt><dd class="font-medium">@if ($quote->opportunity)<a href="{{ route('opportunities.show', $quote->opportunity) }}" class="hover:underline">{{ $quote->opportunity->name }}</a>@else — @endif</dd></div>
+            <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($quote->company && $canViewCompany)<a href="{{ route('companies.show', $quote->company) }}" class="hover:underline">{{ $quote->company->trade_name }}</a>@else — @endif</dd></div>
+            <div><dt class="text-slate-500">Contacto</dt><dd class="font-medium">@if ($quote->contact && $canViewContact)<a href="{{ route('contacts.show', $quote->contact) }}" class="hover:underline">{{ $quote->contact->first_name }} {{ $quote->contact->last_name }}</a>@else — @endif</dd></div>
+            <div><dt class="text-slate-500">Oportunidad</dt><dd class="font-medium">@if ($quote->opportunity && $canViewOpportunity)<a href="{{ route('opportunities.show', $quote->opportunity) }}" class="hover:underline">{{ $quote->opportunity->name }}</a>@else — @endif</dd></div>
             <div><dt class="text-slate-500">Responsable</dt><dd class="font-medium">{{ $quote->owner?->name ?? '—' }}</dd></div>
             <div><dt class="text-slate-500">Moneda</dt><dd class="font-medium">{{ $quote->currency }}</dd></div>
             <div><dt class="text-slate-500">Emisión</dt><dd class="font-medium">{{ $quote->issue_date?->format('Y-m-d') ?? '—' }}</dd></div>

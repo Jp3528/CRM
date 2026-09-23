@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Task;
 use App\Models\User;
+use App\Support\DataScope;
 
 class TaskPolicy
 {
@@ -14,7 +15,8 @@ class TaskPolicy
 
     public function view(User $user, Task $task): bool
     {
-        return $user->hasPermission('tasks.view');
+        return $user->hasPermission('tasks.view')
+            && DataScope::canAccessTask($user, $task);
     }
 
     public function create(User $user): bool
@@ -24,11 +26,13 @@ class TaskPolicy
 
     public function update(User $user, Task $task): bool
     {
-        return $user->hasPermission('tasks.update');
+        return $user->hasPermission('tasks.update')
+            && DataScope::canAccessTask($user, $task);
     }
 
     public function delete(User $user, Task $task): bool
     {
-        return $user->hasPermission('tasks.delete');
+        return $user->hasPermission('tasks.delete')
+            && DataScope::canAccessTask($user, $task);
     }
 }

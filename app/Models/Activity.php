@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DataScope;
 use App\Support\RelatedEntity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -95,6 +96,16 @@ class Activity extends Model
         }
 
         return $query->where('activities.user_id', $userId);
+    }
+
+    /**
+     * Alcance de datos (Fase 9.5): del autor en alcance o de entidad visible.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<Activity>  $query
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        return DataScope::scopeActivities($query, $user);
     }
 
     /** @param  \Illuminate\Database\Eloquent\Builder<Activity>  $query */

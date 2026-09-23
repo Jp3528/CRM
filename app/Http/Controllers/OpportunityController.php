@@ -12,6 +12,7 @@ use App\Models\Pipeline;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\Opportunities\OpportunityStageService;
+use App\Support\DataScope;
 use App\Support\SyncsTags;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,7 +46,10 @@ class OpportunityController extends Controller
             : 'created_at';
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $user = $request->user();
+
         $opportunities = Opportunity::query()
+            ->visibleTo($user)
             ->with(['company:id,trade_name', 'contact:id,first_name,last_name', 'pipeline:id,name', 'stage:id,name', 'owner:id,name'])
             ->search($validated['search'] ?? null)
             ->status($validated['status'] ?? null)
@@ -78,7 +82,7 @@ class OpportunityController extends Controller
             'statuses' => Opportunity::STATUSES,
             'pipelines' => Pipeline::orderBy('name')->get(['id', 'name']),
             'stages' => \App\Models\PipelineStage::with('pipeline:id,name')->orderBy('pipeline_id')->orderBy('position')->get(['id', 'name', 'pipeline_id']),
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers($user),
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
         ]);
     }
@@ -86,6 +90,8 @@ class OpportunityController extends Controller
     public function kanban(Request $request): View
     {
         $this->authorize('viewAny', Opportunity::class);
+
+        $user = $request->user();
 
         $validated = $request->validate([
             'pipeline_id' => ['nullable', 'integer', 'exists:pipelines,id'],
@@ -96,8 +102,9 @@ class OpportunityController extends Controller
             ?? $pipelines->firstWhere('is_default', true)
             ?? $pipelines->firstOrFail();
 
+        // Solo oportunidades dentro del alcance: columnas y totales sin fugas.
         $stages = $pipeline->stages()->with([
-            'opportunities' => fn ($q) => $q->with(['company:id,trade_name', 'owner:id,name'])
+            'opportunities' => fn ($q) => $q->visibleTo($user)->with(['company:id,trade_name', 'owner:id,name'])
                 ->orderBy('expected_close_date')->orderBy('id'),
         ])->get();
 
@@ -143,6 +150,8 @@ class OpportunityController extends Controller
     {
         $this->authorize('view', $opportunity);
 
+        $user = request()->user();
+
         $opportunity->load([
             'company:id,trade_name,legal_name',
             'contact:id,first_name,last_name,company_id',
@@ -152,13 +161,11 @@ class OpportunityController extends Controller
             'stage:id,name,probability,is_won,is_lost,pipeline_id',
             'tags:id,name,slug,color',
             'stageHistory' => fn ($q) => $q->with(['fromStage:id,name', 'toStage:id,name', 'changedBy:id,name'])->latest('changed_at'),
-            'activities' => fn ($q) => $q->with('user:id,name')->latest()->limit(10),
-            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
-            'quotes' => fn ($q) => $q->latest()->limit(5),
-            'sales' => fn ($q) => $q->latest()->limit(5),
+            'activities' => fn ($q) => $q->visibleTo($user)->with('user:id,name')->latest()->limit(10),
+            'tasks' => fn ($q) => $q->visibleTo($user)->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
+            'quotes' => fn ($q) => $q->visibleTo($user)->latest()->limit(5),
+            'sales' => fn ($q) => $q->visibleTo($user)->latest()->limit(5),
         ]);
-
-        $user = request()->user();
 
         return view('opportunities.show', [
             'opportunity' => $opportunity,
@@ -166,6 +173,9 @@ class OpportunityController extends Controller
             'canMove' => $user->can('move', $opportunity),
             'canCreateQuote' => $user->can('create', \App\Models\Quote::class),
             'canViewSales' => $user->can('viewAny', \App\Models\Sale::class),
+            'canViewCompany' => DataScope::canViewModel($user, $opportunity->company),
+            'canViewContact' => DataScope::canViewModel($user, $opportunity->contact),
+            'canViewLead' => DataScope::canViewModel($user, $opportunity->lead),
             'pipelineStages' => $opportunity->pipeline->stages()->get(['id', 'name', 'is_won', 'is_lost']),
         ]);
     }
@@ -224,15 +234,8 @@ class OpportunityController extends Controller
      */
     private function formData(?Opportunity $opportunity = null): array
     {
-        $ownerQuery = User::where('status', 'active')->orderBy('name');
-        if ($opportunity?->owner_id) {
-            $ownerQuery = User::where(
-                fn ($q) => $q->where('status', 'active')->orWhere('id', $opportunity->owner_id)
-            )->orderBy('name');
-        }
-
         return [
-            'owners' => $ownerQuery->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers(auth()->user(), $opportunity?->owner_id),
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'contacts' => Contact::with('company:id,trade_name')->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_id']),
             'leads' => Lead::orderBy('first_name')->get(['id', 'first_name', 'last_name', 'company_name']),

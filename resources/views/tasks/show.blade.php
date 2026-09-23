@@ -48,7 +48,7 @@
             <div><dt class="text-slate-500">Creada por</dt><dd class="font-medium">{{ $task->creator?->name ?? '—' }}</dd></div>
             <div><dt class="text-slate-500">Vencimiento</dt><dd class="font-medium">{{ $task->due_at?->format('Y-m-d H:i') ?? '—' }}</dd></div>
             <div><dt class="text-slate-500">Completada</dt><dd class="font-medium">{{ $task->completed_at?->format('Y-m-d H:i') ?? '—' }}</dd></div>
-            <div><dt class="text-slate-500">Relacionado con</dt><dd class="font-medium">@if ($task->related_url)<a href="{{ $task->related_url }}" class="hover:underline">{{ $task->related_label }}</a>@else {{ $task->related_label }}@endif</dd></div>
+            <div><dt class="text-slate-500">Relacionado con</dt><dd class="font-medium">@if ($task->related_url && $canViewRelated)<a href="{{ $task->related_url }}" class="hover:underline">{{ $task->related_label }}</a>@else {{ $canViewRelated ? $task->related_label : '—' }}@endif</dd></div>
         </dl>
         @if ($task->description)
             <div class="mt-3 border-t border-slate-100 pt-3 text-sm"><p class="text-slate-500">Descripción</p><p class="mt-1 whitespace-pre-line">{{ $task->description }}</p></div>

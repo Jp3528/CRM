@@ -41,7 +41,7 @@
                 <div><dt class="text-slate-500">Nombre</dt><dd class="font-medium">{{ $contact->full_name }}</dd></div>
                 <div><dt class="text-slate-500">Cargo</dt><dd class="font-medium">{{ $contact->job_title ?? '—' }}</dd></div>
                 <div><dt class="text-slate-500">Departamento</dt><dd class="font-medium">{{ $contact->department ?? '—' }}</dd></div>
-                <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($contact->company)<a href="{{ route('companies.show', $contact->company) }}" class="hover:underline">{{ $contact->company->trade_name }}</a>@else — @endif</dd></div>
+                <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($contact->company && $canViewCompany)<a href="{{ route('companies.show', $contact->company) }}" class="hover:underline">{{ $contact->company->trade_name }}</a>@else — @endif</dd></div>
             </dl>
         </x-card>
 

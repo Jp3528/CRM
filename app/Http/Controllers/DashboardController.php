@@ -45,17 +45,19 @@ class DashboardController extends Controller
                 ->get();
         }
 
-        // Cotizaciones pendientes y próximas a vencer (conteos + top 5, sin analítica).
+        // Cotizaciones pendientes y próximas a vencer (con alcance de datos).
         $pendingQuotes = collect();
         $expiringQuotes = collect();
 
         if ($user->can('viewAny', Quote::class)) {
             $pendingQuotes = Quote::with('company:id,trade_name')
+                ->visibleTo($user)
                 ->whereIn('status', ['draft', 'sent'])
                 ->orderBy('valid_until')
                 ->limit(5)
                 ->get();
             $expiringQuotes = Quote::with('company:id,trade_name')
+                ->visibleTo($user)
                 ->whereIn('status', ['draft', 'sent'])
                 ->whereNotNull('valid_until')
                 ->whereDate('valid_until', '>=', today())
@@ -79,30 +81,30 @@ class DashboardController extends Controller
             'expiringQuotes' => $expiringQuotes,
             'canSeeQuotes' => $user->can('viewAny', Quote::class),
             'recentSales' => $user->can('viewAny', Sale::class)
-                ? Sale::with('company:id,trade_name')->latest()->limit(5)->get()
+                ? Sale::with('company:id,trade_name')->visibleTo($user)->latest()->limit(5)->get()
                 : collect(),
             'pendingInvoices' => $user->can('viewAny', Invoice::class)
-                ? Invoice::with('company:id,trade_name')->whereIn('status', ['draft', 'sent'])->latest()->limit(5)->get()
+                ? Invoice::with('company:id,trade_name')->visibleTo($user)->whereIn('status', ['draft', 'sent'])->latest()->limit(5)->get()
                 : collect(),
             'overdueInvoices' => $user->can('viewAny', Invoice::class)
-                ? Invoice::with('company:id,trade_name')->whereNotNull('due_date')
+                ? Invoice::with('company:id,trade_name')->visibleTo($user)->whereNotNull('due_date')
                     ->whereDate('due_date', '<', today())
                     ->whereNotIn('status', ['paid', 'cancelled'])->orderBy('due_date')->limit(5)->get()
                 : collect(),
             'canSeeSales' => $user->can('viewAny', Sale::class),
             'canSeeInvoices' => $user->can('viewAny', Invoice::class),
             'openTickets' => $user->can('viewAny', Ticket::class)
-                ? Ticket::whereIn('status', ['new', 'open', 'pending'])->count()
+                ? Ticket::visibleTo($user)->whereIn('status', ['new', 'open', 'pending'])->count()
                 : 0,
             'urgentTickets' => $user->can('viewAny', Ticket::class)
-                ? Ticket::with('company:id,trade_name')->where('priority', 'urgent')
+                ? Ticket::with('company:id,trade_name')->visibleTo($user)->where('priority', 'urgent')
                     ->whereNotIn('status', ['resolved', 'closed'])->latest()->limit(5)->get()
                 : collect(),
             'unassignedTickets' => $user->can('viewAny', Ticket::class)
-                ? Ticket::whereNull('assigned_to')->whereNotIn('status', ['resolved', 'closed'])->count()
+                ? Ticket::visibleTo($user)->whereNull('assigned_to')->whereNotIn('status', ['resolved', 'closed'])->count()
                 : 0,
             'pendingTickets' => $user->can('viewAny', Ticket::class)
-                ? Ticket::where('status', 'pending')->count()
+                ? Ticket::visibleTo($user)->where('status', 'pending')->count()
                 : 0,
             'canSeeTickets' => $user->can('viewAny', Ticket::class),
         ]);

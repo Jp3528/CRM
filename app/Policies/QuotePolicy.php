@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Quote;
 use App\Models\User;
+use App\Support\DataScope;
 
 class QuotePolicy
 {
@@ -14,7 +15,8 @@ class QuotePolicy
 
     public function view(User $user, Quote $quote): bool
     {
-        return $user->hasPermission('quotes.view');
+        return $user->hasPermission('quotes.view')
+            && DataScope::canAccessOwner($user, $quote->owner);
     }
 
     public function create(User $user): bool
@@ -24,11 +26,13 @@ class QuotePolicy
 
     public function update(User $user, Quote $quote): bool
     {
-        return $user->hasPermission('quotes.update');
+        return $user->hasPermission('quotes.update')
+            && DataScope::canAccessOwner($user, $quote->owner);
     }
 
     public function delete(User $user, Quote $quote): bool
     {
-        return $user->hasPermission('quotes.delete');
+        return $user->hasPermission('quotes.delete')
+            && DataScope::canAccessOwner($user, $quote->owner);
     }
 }

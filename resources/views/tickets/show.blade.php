@@ -67,7 +67,7 @@
         <x-card title="Datos del caso">
             <dl class="grid grid-cols-2 gap-3 text-sm">
                 <div><dt class="text-slate-500">Solicitante</dt><dd class="font-medium">{{ $ticket->requester_label }}@if ($ticket->requester_email && ! $ticket->contact)<span class="block text-xs font-normal text-slate-500">{{ $ticket->requester_email }}</span>@endif</dd></div>
-                <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($ticket->company)<a href="{{ route('companies.show', $ticket->company) }}" class="hover:underline">{{ $ticket->company->trade_name }}</a>@else — @endif</dd></div>
+                <div><dt class="text-slate-500">Empresa</dt><dd class="font-medium">@if ($ticket->company && $canViewCompany)<a href="{{ route('companies.show', $ticket->company) }}" class="hover:underline">{{ $ticket->company->trade_name }}</a>@else — @endif</dd></div>
                 <div><dt class="text-slate-500">Canal</dt><dd class="font-medium">{{ ucfirst($ticket->channel) }}</dd></div>
                 <div><dt class="text-slate-500">Asignado a</dt><dd class="font-medium">{{ $ticket->assignee?->name ?? 'Sin asignar' }}</dd></div>
                 <div><dt class="text-slate-500">Creado por</dt><dd class="font-medium">{{ $ticket->creator?->name ?? '—' }}</dd></div>

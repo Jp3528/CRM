@@ -27,7 +27,7 @@
         <dl class="grid grid-cols-2 gap-3 text-sm">
             <div class="col-span-2"><dt class="text-slate-500">Título</dt><dd class="font-medium">{{ $activity->subject ?? '—' }}</dd></div>
             <div><dt class="text-slate-500">Usuario</dt><dd class="font-medium">{{ $activity->user?->name ?? '—' }}</dd></div>
-            <div><dt class="text-slate-500">Relacionado con</dt><dd class="font-medium">@if ($activity->related_url)<a href="{{ $activity->related_url }}" class="hover:underline">{{ $activity->related_label }}</a>@else {{ $activity->related_label }}@endif</dd></div>
+            <div><dt class="text-slate-500">Relacionado con</dt><dd class="font-medium">@if ($activity->related_url && $canViewRelated)<a href="{{ $activity->related_url }}" class="hover:underline">{{ $activity->related_label }}</a>@else {{ $canViewRelated ? $activity->related_label : '—' }}@endif</dd></div>
             <div><dt class="text-slate-500">Programada</dt><dd class="font-medium">{{ $activity->scheduled_at?->format('Y-m-d H:i') ?? '—' }}</dd></div>
             <div><dt class="text-slate-500">Completada</dt><dd class="font-medium">{{ $activity->completed_at?->format('Y-m-d H:i') ?? '—' }}</dd></div>
         </dl>

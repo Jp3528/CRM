@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\DataScope;
 
 class TicketPolicy
 {
@@ -14,7 +15,8 @@ class TicketPolicy
 
     public function view(User $user, Ticket $ticket): bool
     {
-        return $user->hasPermission('tickets.view');
+        return $user->hasPermission('tickets.view')
+            && DataScope::canAccessTicket($user, $ticket);
     }
 
     public function create(User $user): bool
@@ -24,11 +26,13 @@ class TicketPolicy
 
     public function update(User $user, Ticket $ticket): bool
     {
-        return $user->hasPermission('tickets.update');
+        return $user->hasPermission('tickets.update')
+            && DataScope::canAccessTicket($user, $ticket);
     }
 
     public function delete(User $user, Ticket $ticket): bool
     {
-        return $user->hasPermission('tickets.delete');
+        return $user->hasPermission('tickets.delete')
+            && DataScope::canAccessTicket($user, $ticket);
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\Opportunity;
 use App\Models\User;
+use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -33,7 +34,10 @@ class InvoiceController extends Controller
             : 'created_at';
         $direction = ($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
+        $user = $request->user();
+
         $invoices = Invoice::query()
+            ->visibleTo($user)
             ->with([
                 'sale:id,number', 'company:id,trade_name', 'contact:id,first_name,last_name',
                 'owner:id,name',
@@ -62,7 +66,7 @@ class InvoiceController extends Controller
                 'direction' => $direction,
             ],
             'statuses' => Invoice::STATUSES,
-            'owners' => User::where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'owners' => DataScope::filterableUsers($user),
             'companies' => Company::orderBy('trade_name')->get(['id', 'trade_name']),
             'currencies' => Opportunity::CURRENCIES,
         ]);
@@ -85,6 +89,9 @@ class InvoiceController extends Controller
         return view('invoices.show', [
             'invoice' => $invoice,
             'canUpdate' => $user->can('update', $invoice),
+            'canViewCompany' => DataScope::canViewModel($user, $invoice->company),
+            'canViewContact' => DataScope::canViewModel($user, $invoice->contact),
+            'canViewSale' => DataScope::canViewModel($user, $invoice->sale),
         ]);
     }
 
