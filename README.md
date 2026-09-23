@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 10: Campañas + comunicaciones simuladas.
+CRM empresarial web construido con Laravel. Fase 11: motor interno de automatizaciones (event-driven, sin código arbitrario ni envíos).
 
 ## Stack
 
@@ -504,8 +504,80 @@ clasificación. No existen métricas reales de delivery/open/click.
   XSS/edición), masivos (elegibles/unsubscribed/límite 500), IDOR ×5, query
   string, Consulta read-only, supervisor mismo equipo.
 
-## Alcance actual (Fase 10)
+## Alcance actual (Fase 11)
 
-RBAC + DataScope activos en campañas, plantillas y comunicaciones. Sin
-automatizaciones, proveedores reales, API, webhooks, reportes avanzados, AI ni
-portal de cliente (Fase 11 no iniciada).
+RBAC + DataScope activos también en automatizaciones. Sin scheduled triggers,
+colas, webhooks, API, reportes, IA ni proveedores reales. Fase 12 no iniciada.
+
+## Fase 11 — Motor de automatizaciones internas
+
+Trigger → conditions (AND) → actions → AutomationRun. Deliberadamente limitado:
+sin scripting, eval, Blade sobre input, SQL/clases/métodos arbitrarios, HTTP,
+webhooks, email/SMS/WhatsApp reales, IA, ramas, loops, delays ni cron.
+
+- Esquema (migración `000027`): `automations` (name, description, status,
+  trigger_type, conditions/actions `jsonb`, owner/created_by `nullOnDelete`,
+  last_run_at, SoftDeletes; índice compuesto `(status, trigger_type)`) y
+  `automation_runs` (automation `nullOnDelete`, event_uuid `uuid`, trigger,
+  subject, status, triggered_by, context/result `jsonb`, error_message,
+  started/finished; unique `(automation_id, event_uuid)` anti-duplicados).
+- Estados: `draft` (configurable, no ejecuta), `active` (escucha), `paused`
+  (conserva, no ejecuta). Active no se edita (pause → edit → activate, backend);
+  el estado no viaja en update normal (`prohibited`); delete exige pausada y es
+  soft (historial conservado). Activar revalida TODA la config y exige owner
+  activo.
+- Permisos `automations.view/create/update/delete/execute` (idempotentes;
+  Superadministrador sincronizado). `AutomationPolicy` = permiso + DataScope
+  (`owner_id`). `execute` cubre activate/pause/dry-run y está en
+  `WRITE_ABILITIES` (Consulta sigue read-only aunque reciba permisos por error).
+- Catálogo central `AutomationCatalog` (whitelists): 12 triggers
+  (`lead.created`, `lead.status_changed`, `contact.created`,
+  `opportunity.stage_changed/won/lost`, `task.completed`,
+  `ticket/quote/sale/invoice/campaign.status_changed`), subjects
+  (`lead/opportunity/task/ticket/quote/sale/invoice/campaign/contact`, nunca
+  clases PHP), condition fields por trigger (columnas reales + `previous_*`
+  controlados), 11 operadores con compatibilidad por tipo, 4 acciones
+  (`create_task`, `create_activity`, `assign_owner`, `add_to_campaign`).
+- Detección: un `AutomationObserver` central (9 modelos, sin duplicar hooks en
+  controllers/servicios); previos capturados en `updating`, dispatch en
+  `created/updated` solo ante cambio real (no-op no emite; sin deleted/restored).
+  Contexto limitado (sin snapshots ni PII duplicada).
+- After-commit: `AutomationTriggerDispatcher` difiere con `DB::afterCommit()`
+  (síncrono si no hay transacción; modo `::$sync` explícito para tests con
+  RefreshDatabase). El negocio confirma primero; un fallo de automatización
+  nunca lo revierte (run `failed`, error seguro sin stack trace en UI).
+- Condiciones: lista AND, máx. 10; `ConditionEvaluator` con tipos seguros
+  (decimales vía `bccomp`, `contains` solo strings, sin comparaciones ambiguas).
+- Acciones: máx. 5 en orden, `AutomationActionExecutor` con match cerrado.
+  `create_task` (title/description con variables whitelist, priority,
+  due_in_days 0–365, assigned_to subject_owner/automation_owner/triggering_user/
+  fixed_user, relación vía `RelatedEntity` si aplica); `create_activity`
+  (tipos `note/call/email`, nunca `status_change`); `assign_owner` (solo modelos
+  con `owner_id`, destino automation_owner/triggering_user/fixed_user, vía
+  `can('update')` sin saltar Policy); `add_to_campaign` (solo contact/lead,
+  campaña visible/editable, sin duplicados, sin envíos). Variables
+  `subject_name/subject_id/owner_name` con `strtr()`.
+- Transacción por run: las acciones de una automatización son atómicas (fallo →
+  rollback propio + `failed`); cada automatización aislada en try/catch (una
+  defectuosa no bloquea otras). `last_run_at` en cada run terminal.
+- Revalidación al ejecutar (nunca autoridad histórica): owner existe+activo,
+  `canViewModel(owner, subject)`, permiso funcional por acción, fixed_user y
+  campaign contra el alcance actual. Skips: `owner_missing/inactive`,
+  `scope_denied`, `permission_denied`, `conditions_not_met`, `subject_unavailable`.
+- Dedup por unique `(automation_id, event_uuid)` (segundo delivery se ignora);
+  loop guard con `correlation_id`/`depth` (máx. 5) + anti-reentrada por cadena
+  (dormidos en Fase 11 porque ninguna acción produce triggers, testeados igual).
+- CRUD `automations.*` + `activate/pause/dry-run` y detalle de run; builder sin
+  JSON crudo (Alpine: trigger→campos→operadores, acciones con parámetros);
+  backend valida todo (`AutomationDefinitionValidator`, usado en store/update/
+  activate). Dry run requiere `execute`, valida subject visible (403 si no),
+  no escribe nada ni crea runs.
+- Historial paginado en la ficha + detalle de run (status/trigger/subject/
+  duración/resultado/error seguro). Dashboard: activas + fallos recientes
+  (scoped). Sidebar AUTOMATIZACIÓN por `automations.view`. Empty states y
+  breadcrumbs incluidos.
+- Tests: `tests/Feature/PhaseElevenTest` (43 tests): CRUD/validación/transiciones,
+  triggers reales vía servicios, decimales exactos, atomicidad, aislamiento
+  múltiple, dedup, loop guard, dry run, 4 acciones, operadores, límites,
+  seguridad de payloads, XSS, IDOR, escalamiento denegado, Consulta/sin-rol/
+  null-team, rechecks (permiso/owner/scope), smoke de 100 automations y detalle.

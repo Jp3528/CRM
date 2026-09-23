@@ -46,7 +46,7 @@ final class DataScope
     public const TEAM_ROLES = ['Gerente comercial', 'Supervisor'];
 
     /** Habilidades de escritura bloqueadas para el rol Consulta puro. */
-    public const WRITE_ABILITIES = ['create', 'update', 'delete', 'move', 'convert'];
+    public const WRITE_ABILITIES = ['create', 'update', 'delete', 'move', 'convert', 'execute'];
 
     /**
      * Memoización por OBJETO (WeakMap), no por ID: los IDs se reutilizan

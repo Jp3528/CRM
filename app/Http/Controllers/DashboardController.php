@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Models\Automation;
+use App\Models\AutomationRun;
 use App\Models\Campaign;
 use App\Models\Communication;
 use App\Models\Invoice;
@@ -118,6 +120,17 @@ class DashboardController extends Controller
                 ? Communication::visibleTo($user)->latest()->limit(5)->get()
                 : collect(),
             'canSeeCommunications' => $user->can('viewAny', Communication::class),
+            // Fase 11 — automatizaciones (solo visibles en alcance, sin analítica).
+            'activeAutomations' => $user->can('viewAny', Automation::class)
+                ? Automation::visibleTo($user)->where('status', 'active')->orderBy('updated_at', 'desc')->limit(5)->get()
+                : collect(),
+            'failedRuns' => $user->can('viewAny', Automation::class)
+                ? AutomationRun::where('status', 'failed')
+                    ->whereIn('automation_id', Automation::visibleTo($user)->select('automations.id'))
+                    ->with('automation:id,name')
+                    ->latest()->limit(5)->get()
+                : collect(),
+            'canSeeAutomations' => $user->can('viewAny', Automation::class),
         ]);
     }
 }

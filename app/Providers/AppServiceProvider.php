@@ -2,7 +2,17 @@
 
 namespace App\Providers;
 
+use App\Models\Campaign;
+use App\Models\Contact;
+use App\Models\Invoice;
+use App\Models\Lead;
+use App\Models\Opportunity;
+use App\Models\Quote;
+use App\Models\Sale;
+use App\Models\Task;
+use App\Models\Ticket;
 use App\Models\User;
+use App\Observers\AutomationObserver;
 use App\Support\DataScope;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -38,5 +48,12 @@ class AppServiceProvider extends ServiceProvider
 
             return $user->hasPermission($ability) ? true : null;
         });
+
+        // Motor de automatizaciones (Fase 11): hook central de eventos.
+        // Sin duplicar en controllers/servicios; la ejecución se difiere a
+        // after-commit desde el dispatcher (el evento confirma primero).
+        foreach ([Lead::class, Contact::class, Opportunity::class, Task::class, Ticket::class, Quote::class, Sale::class, Invoice::class, Campaign::class] as $model) {
+            $model::observe(AutomationObserver::class);
+        }
     }
 }

@@ -27,6 +27,9 @@ $navSections = [
         ['label' => 'Plantillas', 'route' => 'templates.index', 'can' => 'templates.view', 'soon' => false],
         ['label' => 'Comunicaciones', 'route' => 'communications.index', 'can' => 'communications.view', 'soon' => false],
     ]],
+    ['title' => 'Automatización', 'items' => [
+        ['label' => 'Automatizaciones', 'route' => 'automations.index', 'can' => 'automations.view', 'soon' => false],
+    ]],
 ];
 $navAdmin = [
     ['label' => 'Usuarios', 'route' => 'admin.users.index', 'can' => 'users.view', 'soon' => false],

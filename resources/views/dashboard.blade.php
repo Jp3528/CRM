@@ -50,6 +50,7 @@
                 @can('campaigns.view')<li><a class="text-slate-700 hover:underline" href="{{ route('campaigns.index') }}">· Campañas</a></li>@endcan
                 @can('templates.view')<li><a class="text-slate-700 hover:underline" href="{{ route('templates.index') }}">· Plantillas</a></li>@endcan
                 @can('communications.view')<li><a class="text-slate-700 hover:underline" href="{{ route('communications.index') }}">· Comunicaciones</a></li>@endcan
+                @can('automations.view')<li><a class="text-slate-700 hover:underline" href="{{ route('automations.index') }}">· Automatizaciones</a></li>@endcan
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan
                 <li><a class="text-slate-700 hover:underline" href="{{ route('profile.edit') }}">· Mi perfil</a></li>
             </ul>
@@ -248,6 +249,35 @@
                     @endif
                 </x-card>
             @endif
+        </div>
+    @endif
+
+    @if ($canSeeAutomations)
+        <div class="grid gap-4 md:grid-cols-2">
+            <x-card title="Automatizaciones activas ({{ $activeAutomations->count() }})" subtitle="Reglas internas en escucha">
+                @if ($activeAutomations->isEmpty())
+                    <p class="text-sm text-slate-500">Sin automatizaciones activas. <a href="{{ route('automations.index') }}" class="hover:underline">Ver automatizaciones</a></p>
+                @else
+                    <ul class="space-y-2 text-sm">
+                        @foreach ($activeAutomations as $automation)
+                            <li><a href="{{ route('automations.show', $automation) }}" class="hover:underline">{{ $automation->name }}</a>
+                                <span class="text-xs text-slate-400">· {{ $automation->trigger_type }}</span></li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-card>
+            <x-card title="Fallos recientes ({{ $failedRuns->count() }})" subtitle="Solo automatizaciones en tu alcance">
+                @if ($failedRuns->isEmpty())
+                    <p class="text-sm text-slate-500">Sin fallos recientes.</p>
+                @else
+                    <ul class="space-y-2 text-sm">
+                        @foreach ($failedRuns as $run)
+                            <li><a href="{{ route('automations.runs.show', [$run->automation, $run]) }}" class="hover:underline">{{ $run->automation?->name ?? '—' }}</a>
+                                <span class="text-xs text-slate-400">· {{ $run->created_at->format('Y-m-d H:i') }}</span></li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-card>
         </div>
     @endif
 @endsection

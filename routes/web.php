@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\CampaignMemberController;
@@ -199,6 +200,18 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('communications', CommunicationController::class);
     Route::patch('communications/{communication}/simulate', [CommunicationController::class, 'simulate'])
         ->name('communications.simulate');
+
+    // Motor de automatizaciones internas (Fase 11). Event-driven, sin colas,
+    // sin webhooks ni envíos externos. Estado solo vía activate/pause.
+    Route::resource('automations', AutomationController::class);
+    Route::post('automations/{automation}/activate', [AutomationController::class, 'activate'])
+        ->name('automations.activate');
+    Route::post('automations/{automation}/pause', [AutomationController::class, 'pause'])
+        ->name('automations.pause');
+    Route::post('automations/{automation}/dry-run', [AutomationController::class, 'dryRun'])
+        ->name('automations.dry-run');
+    Route::get('automations/{automation}/runs/{run}', [AutomationController::class, 'showRun'])
+        ->name('automations.runs.show');
 
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([

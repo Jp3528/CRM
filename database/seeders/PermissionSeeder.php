@@ -54,6 +54,12 @@ class PermissionSeeder extends Seeder
         ['name' => 'communications.create', 'label' => 'Create Communications', 'description' => 'Permite registrar comunicaciones simuladas.', 'group' => 'communications'],
         ['name' => 'communications.update', 'label' => 'Update Communications', 'description' => 'Permite editar borradores y registrar envíos simulados.', 'group' => 'communications'],
         ['name' => 'communications.delete', 'label' => 'Delete Communications', 'description' => 'Permite eliminar comunicaciones.', 'group' => 'communications'],
+        // Fase 11 — Motor de automatizaciones internas (sin código arbitrario ni envíos).
+        ['name' => 'automations.view', 'label' => 'View Automations', 'description' => 'Permite ver automatizaciones.', 'group' => 'automations'],
+        ['name' => 'automations.create', 'label' => 'Create Automations', 'description' => 'Permite crear automatizaciones en borrador.', 'group' => 'automations'],
+        ['name' => 'automations.update', 'label' => 'Update Automations', 'description' => 'Permite editar automatizaciones pausadas o en borrador.', 'group' => 'automations'],
+        ['name' => 'automations.delete', 'label' => 'Delete Automations', 'description' => 'Permite eliminar automatizaciones.', 'group' => 'automations'],
+        ['name' => 'automations.execute', 'label' => 'Execute Automations', 'description' => 'Permite activar, pausar y probar automatizaciones.', 'group' => 'automations'],
     ];
 
     public function run(): void

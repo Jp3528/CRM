@@ -24,6 +24,14 @@ $map = [
     'accepted' => ['green', 'Aceptada'],
     'rejected' => ['red', 'Rechazada'],
     'expired' => ['yellow', 'Vencida'],
+    'paused' => ['yellow', 'Pausada'],
+    'scheduled' => ['blue', 'Programada'],
+    'success' => ['green', 'Éxito'],
+    'skipped' => ['slate', 'Omitida'],
+    'failed' => ['red', 'Fallida'],
+    'running' => ['blue', 'En curso'],
+    'simulated_sent' => ['blue', 'Simulada'],
+    'queued' => ['yellow', 'En cola'],
 ];
 [$color, $defaultLabel] = $map[$status] ?? ['slate', ucfirst($status)];
 @endphp
