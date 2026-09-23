@@ -79,4 +79,114 @@ class User extends Authenticatable
     {
         return $this->hasMany(Task::class, 'assigned_to');
     }
+
+    // -----------------------------------------------------------------
+    // RBAC operativo (Fase 2). Lógica centralizada: no dispersar
+    // comprobaciones de roles/permisos por controladores o vistas.
+    // -----------------------------------------------------------------
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains(
+                fn (Role $role) => $role->name === 'Superadministrador'
+                    || $role->slug === 'superadministrador'
+            );
+        }
+
+        return $this->roles()
+            ->where('name', 'Superadministrador')
+            ->orWhere('slug', 'superadministrador')
+            ->exists();
+    }
+
+    public function hasRole(string $role): bool
+    {
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains(
+                fn (Role $r) => $r->name === $role || $r->slug === $role
+            );
+        }
+
+        return $this->roles()
+            ->where('name', $role)
+            ->orWhere('slug', $role)
+            ->exists();
+    }
+
+    /**
+     * @param  array<int, string>  $roles
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        foreach ($roles as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        // Excepción centralizada: Superadministrador lo puede todo.
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($this->relationLoaded('permissions')) {
+            if ($this->permissions->contains('name', $permission)) {
+                return true;
+            }
+        } elseif ($this->permissions()->where('name', $permission)->exists()) {
+            return true;
+        }
+
+        if ($this->relationLoaded('roles')) {
+            foreach ($this->roles as $role) {
+                if ($role->relationLoaded('permissions')) {
+                    if ($role->permissions->contains('name', $permission)) {
+                        return true;
+                    }
+                } elseif ($role->permissions()->where('name', $permission)->exists()) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return $this->roles()
+            ->whereHas('permissions', fn ($query) => $query->where('name', $permission))
+            ->exists();
+    }
+
+    /**
+     * @param  array<int, string>  $permissions
+     */
+    public function hasAnyPermission(array $permissions): bool
+    {
+        foreach ($permissions as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function primaryRole(): ?Role
+    {
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->first();
+        }
+
+        return $this->roles()->orderBy('roles.id')->first();
+    }
 }

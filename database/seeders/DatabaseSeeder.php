@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Lead;
+use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -31,6 +32,13 @@ class DatabaseSeeder extends Seeder
             ['email' => 'demo@nexuscrm.local'],
             ['name' => 'Usuario Demo', 'password' => 'password', 'team_id' => $team->id, 'status' => 'active']
         );
+
+        // Usuario de desarrollo con acceso total (idempotente, sin duplicados).
+        // Contraseña demo solo para entorno local: ver README Fase 2.
+        $super = Role::where('name', 'Superadministrador')->first();
+        if ($super) {
+            $user->roles()->syncWithoutDetaching([$super->id]);
+        }
 
         $companies = Company::factory(3)->create(['owner_id' => $user->id]);
         foreach ($companies as $company) {
