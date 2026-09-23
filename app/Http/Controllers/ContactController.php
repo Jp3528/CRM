@@ -119,6 +119,17 @@ class ContactController extends Controller
             'tickets' => fn ($q) => $q->visibleTo($viewer)->latest()->limit(5),
         ]);
 
+        $memberCampaignIds = \App\Models\CampaignMember::where('member_type', 'contact')
+            ->where('member_id', $contact->id)
+            ->pluck('campaign_id')
+            ->all();
+        $recentCampaigns = $viewer->can('viewAny', \App\Models\Campaign::class) && $memberCampaignIds !== []
+            ? \App\Models\Campaign::visibleTo($viewer)->whereKey($memberCampaignIds)->latest()->limit(5)->get()
+            : collect();
+        $recentCommunications = $viewer->can('viewAny', \App\Models\Communication::class)
+            ? \App\Models\Communication::visibleTo($viewer)->where('contact_id', $contact->id)->latest()->limit(5)->get()
+            : collect();
+
         return view('contacts.show', [
             'contact' => $contact,
             'canUpdate' => $viewer->can('update', $contact),
@@ -126,6 +137,10 @@ class ContactController extends Controller
             'canViewQuotes' => $viewer->can('viewAny', \App\Models\Quote::class),
             'canViewInvoices' => $viewer->can('viewAny', \App\Models\Invoice::class),
             'canViewTickets' => $viewer->can('viewAny', \App\Models\Ticket::class),
+            'recentCampaigns' => $recentCampaigns,
+            'recentCommunications' => $recentCommunications,
+            'canViewCampaigns' => $viewer->can('viewAny', \App\Models\Campaign::class),
+            'canViewCommunications' => $viewer->can('viewAny', \App\Models\Communication::class),
         ]);
     }
 

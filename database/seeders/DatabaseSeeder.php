@@ -35,5 +35,29 @@ class DatabaseSeeder extends Seeder
             Contact::factory(2)->create(['company_id' => $company->id, 'owner_id' => $user->id]);
         }
         Lead::factory(3)->create(['owner_id' => $user->id]);
+
+        // Fase 10: 2 plantillas demo (solo desarrollo, idempotentes).
+        \App\Models\MessageTemplate::firstOrCreate(
+            ['name' => 'Bienvenida email'],
+            [
+                'channel' => 'email',
+                'subject' => 'Bienvenido a NexusCRM',
+                'body' => "Hola {{full_name}},\ngracias por tu interés en {{company_name}}.",
+                'status' => 'active',
+                'owner_id' => $user->id,
+                'created_by' => $user->id,
+            ]
+        );
+        \App\Models\MessageTemplate::firstOrCreate(
+            ['name' => 'Recordatorio WhatsApp'],
+            [
+                'channel' => 'whatsapp',
+                'subject' => null,
+                'body' => 'Hola {{first_name}}, te recordamos nuestra promoción vigente.',
+                'status' => 'active',
+                'owner_id' => $user->id,
+                'created_by' => $user->id,
+            ]
+        );
     }
 }

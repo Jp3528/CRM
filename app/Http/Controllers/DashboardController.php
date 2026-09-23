@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
+use App\Models\Campaign;
+use App\Models\Communication;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Sale;
@@ -107,6 +109,15 @@ class DashboardController extends Controller
                 ? Ticket::visibleTo($user)->where('status', 'pending')->count()
                 : 0,
             'canSeeTickets' => $user->can('viewAny', Ticket::class),
+            // Fase 10 — marketing moderado (sin analítica: sin open rate/CTR/delivery).
+            'activeCampaigns' => $user->can('viewAny', Campaign::class)
+                ? Campaign::visibleTo($user)->where('status', 'active')->orderBy('updated_at', 'desc')->limit(5)->get()
+                : collect(),
+            'canSeeCampaigns' => $user->can('viewAny', Campaign::class),
+            'recentCommunications' => $user->can('viewAny', Communication::class)
+                ? Communication::visibleTo($user)->latest()->limit(5)->get()
+                : collect(),
+            'canSeeCommunications' => $user->can('viewAny', Communication::class),
         ]);
     }
 }

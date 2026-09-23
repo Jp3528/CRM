@@ -3,10 +3,14 @@
 namespace App\Support;
 
 use App\Models\Activity;
+use App\Models\Campaign;
+use App\Models\CampaignMember;
+use App\Models\Communication;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\Lead;
+use App\Models\MessageTemplate;
 use App\Models\Opportunity;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -317,6 +321,114 @@ final class DataScope
         return self::canViewModel($viewer, $activity->subjectable);
     }
 
+    // ---------------- Communications (owner + target visible) ----------------
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<*>|\Illuminate\Database\Eloquent\Relations\Relation<*, *, *>  $query
+     */
+    public static function scopeCommunications(mixed $query, User $user): mixed
+    {
+        $ids = self::ownerIds($user);
+
+        if ($ids === null) {
+            return $query;
+        }
+
+        $table = $query->getModel()->getTable();
+
+        $query->whereIn("{$table}.owner_id", $ids);
+
+        // El objetivo también debe estar en alcance: sin fuga por comunicación antigua.
+        $contactIds = self::visibleIds($user, Contact::class) ?? [];
+        $leadIds = self::visibleIds($user, Lead::class) ?? [];
+
+        $query->where(function ($q) use ($contactIds, $table) {
+            $q->whereNull("{$table}.contact_id")
+                ->orWhereIn("{$table}.contact_id", $contactIds === [] ? [0] : $contactIds);
+        })->where(function ($q) use ($leadIds, $table) {
+            $q->whereNull("{$table}.lead_id")
+                ->orWhereIn("{$table}.lead_id", $leadIds === [] ? [0] : $leadIds);
+        });
+
+        return $query;
+    }
+
+    public static function canAccessCommunication(User $viewer, Communication $communication): bool
+    {
+        if (self::isUnconstrained($viewer)) {
+            return true;
+        }
+
+        $ids = self::ownerIds($viewer) ?? [];
+
+        if (! in_array((int) $communication->owner_id, $ids, true)) {
+            return false;
+        }
+
+        if ($communication->contact_id !== null
+            && ! self::isVisibleId($viewer, Contact::class, $communication->contact_id)) {
+            return false;
+        }
+
+        if ($communication->lead_id !== null
+            && ! self::isVisibleId($viewer, Lead::class, $communication->lead_id)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // ---------------- Campaign members (campaña visible + objetivo visible) ----------------
+
+    /**
+     * Filtra miembros por objetivo visible. La campaña se valida aparte
+     * (el controlador ya autorizó la campaña padre).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<*>|\Illuminate\Database\Eloquent\Relations\Relation<*, *, *>  $query
+     */
+    public static function scopeCampaignMembers(mixed $query, User $user): mixed
+    {
+        if (self::isUnconstrained($user)) {
+            return $query;
+        }
+
+        $contactIds = self::visibleIds($user, Contact::class) ?? [];
+        $leadIds = self::visibleIds($user, Lead::class) ?? [];
+
+        return $query->where(function ($q) use ($contactIds, $leadIds) {
+            $q->where(function ($sq) use ($contactIds) {
+                $sq->where('campaign_members.member_type', 'contact')
+                    ->whereIn('campaign_members.member_id', $contactIds === [] ? [0] : $contactIds);
+            })->orWhere(function ($sq) use ($leadIds) {
+                $sq->where('campaign_members.member_type', 'lead')
+                    ->whereIn('campaign_members.member_id', $leadIds === [] ? [0] : $leadIds);
+            });
+        });
+    }
+
+    public static function canViewCampaignMember(User $viewer, CampaignMember $member): bool
+    {
+        if (self::isUnconstrained($viewer)) {
+            return true;
+        }
+
+        $campaign = $member->campaign ?? Campaign::find($member->campaign_id);
+
+        if ($campaign && ! self::canAccessOwner($viewer, $campaign->owner)) {
+            return false;
+        }
+
+        if ($member->member_type === 'contact') {
+            return self::isVisibleId($viewer, Contact::class, $member->member_id);
+        }
+
+        if ($member->member_type === 'lead') {
+            return self::isVisibleId($viewer, Lead::class, $member->member_id);
+        }
+
+        return false;
+    }
+
     // ---------------- Despacho genérico ----------------
 
     public static function canViewModel(User $viewer, ?Model $model): bool
@@ -333,6 +445,8 @@ final class DataScope
             $model instanceof Task => self::canAccessTask($viewer, $model),
             $model instanceof Activity => self::canAccessActivity($viewer, $model),
             $model instanceof Ticket => self::canAccessTicket($viewer, $model),
+            $model instanceof Communication => self::canAccessCommunication($viewer, $model),
+            $model instanceof CampaignMember => self::canViewCampaignMember($viewer, $model),
             $model instanceof Product, $model instanceof ProductCategory => true,
             default => self::canAccessOwner($viewer, $model->owner ?? null),
         };
@@ -351,6 +465,8 @@ final class DataScope
             Task::class => self::scopeTasks($query, $user),
             Ticket::class => self::scopeTickets($query, $user),
             Activity::class => self::scopeActivities($query, $user),
+            Communication::class => self::scopeCommunications($query, $user),
+            CampaignMember::class => self::scopeCampaignMembers($query, $user),
             Product::class, ProductCategory::class => $query,
             default => self::scopeOwned($query, $user),
         };

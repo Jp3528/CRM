@@ -25,6 +25,7 @@
             @can('create', App\Models\Task::class)<a href="{{ route('tasks.create', ['related' => 'contact:'.$contact->id]) }}" class="text-slate-700 hover:underline">Nueva tarea</a>@endcan
             @can('create', App\Models\Activity::class)<a href="{{ route('activities.create', ['related' => 'contact:'.$contact->id]) }}" class="text-slate-700 hover:underline">Registrar actividad</a>@endcan
             @can('create', App\Models\Ticket::class)<a href="{{ route('tickets.create', ['company_id' => $contact->company_id, 'contact_id' => $contact->id]) }}" class="text-slate-700 hover:underline">Nuevo ticket</a>@endcan
+            @can('create', App\Models\Communication::class)<a href="{{ route('communications.create', ['contact_id' => $contact->id]) }}" class="text-slate-700 hover:underline">Nueva comunicación</a>@endcan
             @can('delete', $contact)
                 <form method="POST" action="{{ route('contacts.destroy', $contact) }}" class="inline"
                     x-data @submit.prevent="if (confirm('¿Eliminar a {{ $contact->full_name }}?')) $el.submit()">
@@ -99,6 +100,33 @@
                         <a href="{{ route('invoices.show', $invoice) }}" class="font-mono font-medium hover:underline">{{ $invoice->number }}</a>
                         <x-status-badge :status="$invoice->status" />
                         <span class="ml-auto text-slate-600">{{ number_format($invoice->total, 2) }} {{ $invoice->currency }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </x-card>
+    @endif
+
+    @if (($canViewCampaigns ?? false) && ($recentCampaigns ?? collect())->isNotEmpty())
+        <x-card title="Campañas recientes" subtitle="Audiencias del contacto (en tu alcance)">
+            <ul class="divide-y divide-slate-100 text-sm">
+                @foreach ($recentCampaigns as $campaign)
+                    <li class="flex items-center gap-2 py-2">
+                        <a href="{{ route('campaigns.show', $campaign) }}" class="font-medium hover:underline">{{ $campaign->name }}</a>
+                        <x-status-badge :status="$campaign->status" :label="ucfirst($campaign->status)" />
+                    </li>
+                @endforeach
+            </ul>
+        </x-card>
+    @endif
+
+    @if (($canViewCommunications ?? false) && ($recentCommunications ?? collect())->isNotEmpty())
+        <x-card title="Comunicaciones recientes" subtitle="Registro interno, sin envío externo">
+            <ul class="divide-y divide-slate-100 text-sm">
+                @foreach ($recentCommunications as $comm)
+                    <li class="flex items-center gap-2 py-2">
+                        <a href="{{ route('communications.show', $comm) }}" class="font-medium hover:underline">{{ $comm->subject ?? '(sin asunto)' }}</a>
+                        <x-badge>{{ ucfirst($comm->channel) }}</x-badge>
+                        <span class="ml-auto text-xs text-slate-400">{{ $comm->sent_at?->format('Y-m-d') ?? $comm->created_at->format('Y-m-d') }}</span>
                     </li>
                 @endforeach
             </ul>

@@ -40,6 +40,20 @@ class PermissionSeeder extends Seeder
         ['name' => 'tickets.create', 'label' => 'Create Tickets', 'description' => 'Permite crear tickets de soporte.', 'group' => 'tickets'],
         ['name' => 'tickets.update', 'label' => 'Update Tickets', 'description' => 'Permite editar tickets, asignar y cambiar su estado.', 'group' => 'tickets'],
         ['name' => 'tickets.delete', 'label' => 'Delete Tickets', 'description' => 'Permite eliminar tickets de soporte.', 'group' => 'tickets'],
+        // Fase 10 — Campañas y comunicaciones (envíos siempre simulados, sin proveedor externo).
+        // Plantillas usan el namespace corto `templates.*` (documentado en README).
+        ['name' => 'campaigns.view', 'label' => 'View Campaigns', 'description' => 'Permite ver campañas de marketing.', 'group' => 'campaigns'],
+        ['name' => 'campaigns.create', 'label' => 'Create Campaigns', 'description' => 'Permite crear campañas.', 'group' => 'campaigns'],
+        ['name' => 'campaigns.update', 'label' => 'Update Campaigns', 'description' => 'Permite editar campañas y gestionar miembros.', 'group' => 'campaigns'],
+        ['name' => 'campaigns.delete', 'label' => 'Delete Campaigns', 'description' => 'Permite eliminar campañas.', 'group' => 'campaigns'],
+        ['name' => 'templates.view', 'label' => 'View Templates', 'description' => 'Permite ver plantillas de mensajes.', 'group' => 'templates'],
+        ['name' => 'templates.create', 'label' => 'Create Templates', 'description' => 'Permite crear plantillas de mensajes.', 'group' => 'templates'],
+        ['name' => 'templates.update', 'label' => 'Update Templates', 'description' => 'Permite editar plantillas de mensajes.', 'group' => 'templates'],
+        ['name' => 'templates.delete', 'label' => 'Delete Templates', 'description' => 'Permite eliminar plantillas de mensajes.', 'group' => 'templates'],
+        ['name' => 'communications.view', 'label' => 'View Communications', 'description' => 'Permite ver comunicaciones internas/simuladas.', 'group' => 'communications'],
+        ['name' => 'communications.create', 'label' => 'Create Communications', 'description' => 'Permite registrar comunicaciones simuladas.', 'group' => 'communications'],
+        ['name' => 'communications.update', 'label' => 'Update Communications', 'description' => 'Permite editar borradores y registrar envíos simulados.', 'group' => 'communications'],
+        ['name' => 'communications.delete', 'label' => 'Delete Communications', 'description' => 'Permite eliminar comunicaciones.', 'group' => 'communications'],
     ];
 
     public function run(): void

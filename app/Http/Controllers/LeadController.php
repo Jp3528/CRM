@@ -108,12 +108,27 @@ class LeadController extends Controller
             'tasks' => fn ($q) => $q->visibleTo($user)->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
         ]);
 
+        $memberCampaignIds = \App\Models\CampaignMember::where('member_type', 'lead')
+            ->where('member_id', $lead->id)
+            ->pluck('campaign_id')
+            ->all();
+        $recentCampaigns = $user->can('viewAny', \App\Models\Campaign::class) && $memberCampaignIds !== []
+            ? \App\Models\Campaign::visibleTo($user)->whereKey($memberCampaignIds)->latest()->limit(5)->get()
+            : collect();
+        $recentCommunications = $user->can('viewAny', \App\Models\Communication::class)
+            ? \App\Models\Communication::visibleTo($user)->where('lead_id', $lead->id)->latest()->limit(5)->get()
+            : collect();
+
         return view('leads.show', [
             'lead' => $lead,
             'canUpdate' => $user->can('update', $lead),
             'canConvert' => $lead->status === 'qualified' && $user->can('convert', $lead),
             'canViewConvertedCompany' => DataScope::canViewModel($user, $lead->convertedCompany),
             'canViewConvertedContact' => DataScope::canViewModel($user, $lead->convertedContact),
+            'recentCampaigns' => $recentCampaigns,
+            'recentCommunications' => $recentCommunications,
+            'canViewCampaigns' => $user->can('viewAny', \App\Models\Campaign::class),
+            'canViewCommunications' => $user->can('viewAny', \App\Models\Communication::class),
         ]);
     }
 

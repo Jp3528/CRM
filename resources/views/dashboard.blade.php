@@ -47,6 +47,9 @@
                 @can('sales.view')<li><a class="text-slate-700 hover:underline" href="{{ route('sales.index') }}">· Ventas</a></li>@endcan
                 @can('invoices.view')<li><a class="text-slate-700 hover:underline" href="{{ route('invoices.index') }}">· Facturas</a></li>@endcan
                 @can('tickets.view')<li><a class="text-slate-700 hover:underline" href="{{ route('tickets.index') }}">· Tickets</a></li>@endcan
+                @can('campaigns.view')<li><a class="text-slate-700 hover:underline" href="{{ route('campaigns.index') }}">· Campañas</a></li>@endcan
+                @can('templates.view')<li><a class="text-slate-700 hover:underline" href="{{ route('templates.index') }}">· Plantillas</a></li>@endcan
+                @can('communications.view')<li><a class="text-slate-700 hover:underline" href="{{ route('communications.index') }}">· Comunicaciones</a></li>@endcan
                 @can('users.view')<li><a class="text-slate-700 hover:underline" href="{{ route('admin.users.index') }}">· Usuarios</a></li>@endcan
                 <li><a class="text-slate-700 hover:underline" href="{{ route('profile.edit') }}">· Mi perfil</a></li>
             </ul>
@@ -212,6 +215,39 @@
                     </ul>
                 @endif
             </x-card>
+        </div>
+    @endif
+
+    @if ($canSeeCampaigns || $canSeeCommunications)
+        <div class="grid gap-4 md:grid-cols-2">
+            @if ($canSeeCampaigns)
+                <x-card title="Campañas activas ({{ $activeCampaigns->count() }})" subtitle="Sin métricas externas en esta fase">
+                    @if ($activeCampaigns->isEmpty())
+                        <p class="text-sm text-slate-500">Sin campañas activas. <a href="{{ route('campaigns.index') }}" class="hover:underline">Ver campañas</a></p>
+                    @else
+                        <ul class="space-y-2 text-sm">
+                            @foreach ($activeCampaigns as $campaign)
+                                <li><a href="{{ route('campaigns.show', $campaign) }}" class="hover:underline">{{ $campaign->name }}</a>
+                                    <span class="text-xs text-slate-400">· {{ ucfirst($campaign->type) }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-card>
+            @endif
+            @if ($canSeeCommunications)
+                <x-card title="Comunicaciones simuladas recientes ({{ $recentCommunications->count() }})" subtitle="Registro interno, sin envío externo">
+                    @if ($recentCommunications->isEmpty())
+                        <p class="text-sm text-slate-500">Sin comunicaciones. <a href="{{ route('communications.index') }}" class="hover:underline">Ver comunicaciones</a></p>
+                    @else
+                        <ul class="space-y-2 text-sm">
+                            @foreach ($recentCommunications as $comm)
+                                <li><a href="{{ route('communications.show', $comm) }}" class="hover:underline">{{ $comm->subject ?? '(sin asunto)' }}</a>
+                                    <span class="text-xs text-slate-400">· {{ ucfirst($comm->channel) }} · {{ $comm->status }}</span></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-card>
+            @endif
         </div>
     @endif
 @endsection

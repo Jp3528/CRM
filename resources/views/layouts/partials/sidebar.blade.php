@@ -22,6 +22,11 @@ $navSections = [
         ['label' => 'Ventas', 'route' => 'sales.index', 'can' => 'sales.view', 'soon' => false],
         ['label' => 'Facturas', 'route' => 'invoices.index', 'can' => 'invoices.view', 'soon' => false],
     ]],
+    ['title' => 'Marketing', 'items' => [
+        ['label' => 'Campañas', 'route' => 'campaigns.index', 'can' => 'campaigns.view', 'soon' => false],
+        ['label' => 'Plantillas', 'route' => 'templates.index', 'can' => 'templates.view', 'soon' => false],
+        ['label' => 'Comunicaciones', 'route' => 'communications.index', 'can' => 'communications.view', 'soon' => false],
+    ]],
 ];
 $navAdmin = [
     ['label' => 'Usuarios', 'route' => 'admin.users.index', 'can' => 'users.view', 'soon' => false],

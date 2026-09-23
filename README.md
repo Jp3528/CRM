@@ -1,6 +1,6 @@
 # NexusCRM
 
-CRM empresarial web construido con Laravel. Fase 9.5: DataScope (permiso + alcance).
+CRM empresarial web construido con Laravel. Fase 10: Campañas + comunicaciones simuladas.
 
 ## Stack
 
@@ -450,8 +450,62 @@ actividades, tareas, creación contextual, filtros de responsable.
 npm run build   # compila Vite (Alpine incluido). Aviso opcional de fontaine ignorable.
 ```
 
-## Alcance actual (Fase 9.5)
+## Fase 10 — Campañas + comunicaciones (simuladas)
 
-RBAC + DataScope activos. Sin multi-tenancy, jerarquías ni Fase 10. Todavía NO hay:
-campañas, automatizaciones, reportes, API, webhooks, integraciones externas, email,
-notificaciones avanzadas ni base de conocimiento.
+Sin proveedor externo: NO se envían emails/SMS/WhatsApp reales. No hay SMTP,
+SendGrid, Mailgun, SES, Twilio ni WhatsApp API. `email/sms/whatsapp` son solo
+clasificación. No existen métricas reales de delivery/open/click.
+
+- Esquema (migración `000026`): `campaigns` (money `numeric(15,2)`, SoftDeletes),
+  `campaign_members` (unique `campaign_id+member_type+member_id`, sin FK destructivas
+  a contactos/leads), `message_templates` (SoftDeletes), `communications`
+  (`metadata jsonb`, SoftDeletes, `nullOnDelete` hacia históricos).
+- Campaign: tipos `email/sms/whatsapp/phone/event/other`; estados
+  `draft/scheduled/active/paused/completed/cancelled` con transiciones simples
+  (`TRANSITIONS`, sin workflow engine); editable solo en
+  `draft/scheduled/active/paused`. Búsqueda (nombre/descripción), filtros
+  (status/type/owner/date range), sorting whitelist, paginación 15, conteo de
+  miembros con alcance (`scoped_members_count`). Actividades `status_change`
+  solo en creada/activada/completada.
+- Miembros: claves seguras `contact|lead` vía `CampaignMemberType` (nunca clases
+  PHP); estados `pending/sent/delivered/responded/converted/unsubscribed/failed`
+  (en esta fase el flujo usa `pending→sent` simulado, más `unsubscribed` manual;
+  sin `delivered` falsificado). Alta individual con `DataScope::assertVisibleId`,
+  duplicados rechazados, baja bloqueada si hay comunicaciones. Listado y conteos
+  siempre con alcance (`scopeCampaignMembers`); fuera de alcance se oculta.
+- Audience builder básico: contactos (status/owner/company/tag) y leads
+  (status/source/score mínimo/owner/tag), con preview/count scoped y alta masiva
+  que revalida cada ID en backend (máximo 500 por operación).
+- Plantillas (`templates.view/create/update/delete`, namespace corto documentado):
+  `channel email/sms/whatsapp`, estados `draft/active/archived`, variables
+  whitelist `first_name/last_name/full_name/company_name/email` con `strtr()`
+  (sin Blade/eval/HTML); cuerpos siempre escapados (`{{ }}`, texto plano);
+  preview con datos de ejemplo seguros.
+- Comunicaciones (`communications.*`): `channel`, `direction` (solo `outbound`
+  en esta fase), estados `draft/queued/simulated_sent/failed/cancelled`
+  (sin `delivered/opened/clicked` reales). Compose con objetivo Contact o Lead
+  (exactamente uno), campaña/plantilla opcionales, todo validado contra
+  DataScope. "Registrar envío simulado" crea `simulated_sent + sent_at=now()`
+  y pasa el miembro a `sent` en `DB::transaction`. Masivo por campaña (máximo
+  500, chunks de 100 en una transacción razonable, sin queues).
+- DataScope: campaña/plantilla por `owner_id` (`scopeOwned`); comunicación por
+  owner + objetivo visible (`scopeCommunications`/`canAccessCommunication`);
+  miembros por campaña visible + objetivo visible. `filterableUsers()` en todos
+  los selectores. Query strings (`?owner_id`, `?contact_id`, `?campaign_id`…)
+  no amplían acceso (se combinan con `visibleTo`).
+- Integraciones: contacto/lead muestran campañas y comunicaciones recientes
+  (scoped) + "Nueva comunicación"; dashboard con campañas activas y simuladas
+  recientes (sin analítica); sidebar MARKETING (Campañas/Plantillas/
+  Comunicaciones) por permiso.
+- Tests: `tests/Feature/PhaseTenTest` (30 tests): CRUD, validación, transiciones,
+  search/filters/sorting/paginación, scope, miembros (duplicado/alcance/morph/
+  baja/counts), audience (filtros/tags/score/bulk/scope), plantillas (CRUD/
+  scope/variables/XSS), comunicaciones (crear/simular/transacción/alcance/
+  XSS/edición), masivos (elegibles/unsubscribed/límite 500), IDOR ×5, query
+  string, Consulta read-only, supervisor mismo equipo.
+
+## Alcance actual (Fase 10)
+
+RBAC + DataScope activos en campañas, plantillas y comunicaciones. Sin
+automatizaciones, proveedores reales, API, webhooks, reportes avanzados, AI ni
+portal de cliente (Fase 11 no iniciada).

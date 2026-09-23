@@ -5,6 +5,9 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\CampaignMemberController;
+use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
@@ -12,6 +15,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceStatusController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadConversionController;
+use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\OpportunityStageController;
 use App\Http\Controllers\ProductController;
@@ -172,6 +176,29 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->name('invoices.pay');
     Route::patch('invoices/{invoice}/cancel', [InvoiceStatusController::class, 'cancel'])
         ->name('invoices.cancel');
+
+    // Campañas + comunicaciones (Fase 10). Todo envío es interno/simulado,
+    // sin proveedor externo (email/SMS/WhatsApp solo como clasificación).
+    Route::resource('campaigns', CampaignController::class);
+    Route::get('campaigns/{campaign}/audience', [CampaignMemberController::class, 'audience'])
+        ->name('campaigns.audience');
+    Route::post('campaigns/{campaign}/members', [CampaignMemberController::class, 'store'])
+        ->name('campaigns.members.store');
+    Route::post('campaigns/{campaign}/members/bulk', [CampaignMemberController::class, 'bulkStore'])
+        ->name('campaigns.members.bulk');
+    Route::delete('campaigns/{campaign}/members/{member}', [CampaignMemberController::class, 'destroy'])
+        ->name('campaigns.members.destroy');
+    Route::patch('campaigns/{campaign}/members/{member}/unsubscribe', [CampaignMemberController::class, 'unsubscribe'])
+        ->name('campaigns.members.unsubscribe');
+    Route::post('campaigns/{campaign}/communications', [CommunicationController::class, 'bulkStore'])
+        ->name('campaigns.communications.bulk');
+
+    Route::resource('templates', MessageTemplateController::class)
+        ->parameters(['templates' => 'messageTemplate']);
+
+    Route::resource('communications', CommunicationController::class);
+    Route::patch('communications/{communication}/simulate', [CommunicationController::class, 'simulate'])
+        ->name('communications.simulate');
 
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([
