@@ -188,6 +188,48 @@ class PhaseNineTest extends TestCase
         $this->assertSame(0, Ticket::count());
     }
 
+    public function test_ticket_infers_company_from_selected_contact(): void
+    {
+        $user = $this->ticketAccess();
+        $company = Company::factory()->create(['owner_id' => $user->id]);
+        $contact = Contact::factory()->create(['company_id' => $company->id, 'owner_id' => $user->id]);
+
+        $response = $this->actingAs($user)->post('/tickets', $this->ticketPayload([
+            'company_id' => null,
+            'contact_id' => $contact->id,
+            'requester_name' => '',
+            'requester_email' => '',
+        ]));
+
+        $ticket = Ticket::firstOrFail();
+        $response->assertRedirect(route('tickets.show', $ticket));
+        $this->assertSame($company->id, $ticket->company_id);
+        $this->assertSame($contact->id, $ticket->contact_id);
+    }
+
+    public function test_ticket_assignment_requires_active_user_but_preserves_existing_inactive_assignee(): void
+    {
+        $user = $this->ticketAccess();
+        $inactive = User::factory()->create(['status' => 'inactive']);
+
+        $this->actingAs($user)->from('/tickets/create')->post('/tickets', $this->ticketPayload([
+            'assigned_to' => $inactive->id,
+        ]))->assertRedirect('/tickets/create')->assertSessionHasErrors('assigned_to');
+        $this->assertSame(0, Ticket::count());
+
+        $ticket = $this->makeTicket($user, ['assigned_to' => $inactive->id]);
+
+        $this->actingAs($user)->put("/tickets/{$ticket->id}", $this->ticketPayload([
+            'assigned_to' => $inactive->id,
+        ]))->assertRedirect(route('tickets.show', $ticket));
+        $this->assertSame($inactive->id, $ticket->fresh()->assigned_to);
+
+        $otherInactive = User::factory()->create(['status' => 'inactive']);
+        $this->actingAs($user)->from("/tickets/{$ticket->id}/edit")->put("/tickets/{$ticket->id}", $this->ticketPayload([
+            'assigned_to' => $otherInactive->id,
+        ]))->assertRedirect("/tickets/{$ticket->id}/edit")->assertSessionHasErrors('assigned_to');
+    }
+
     public function test_update_ticket_logs_assignee_change(): void
     {
         $user = $this->ticketAccess();

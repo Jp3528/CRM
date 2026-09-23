@@ -104,7 +104,7 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->normalizeContactCompany($request->validated());
 
         $ticket = DB::transaction(function () use ($data, $request) {
             $ticket = Ticket::create([
@@ -175,7 +175,7 @@ class TicketController extends Controller
 
     public function update(UpdateTicketRequest $request, Ticket $ticket): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->normalizeContactCompany($request->validated());
         $actor = $request->user();
 
         DB::transaction(function () use ($data, $ticket, $actor) {
@@ -219,6 +219,25 @@ class TicketController extends Controller
 
         return redirect()->route('tickets.index')
             ->with('success', 'Ticket eliminado correctamente.');
+    }
+
+    /**
+     * Mantiene coherente el par contacto/empresa: si se selecciona un contacto
+     * ya vinculado y la empresa viene vacía, el ticket hereda esa empresa.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function normalizeContactCompany(array $data): array
+    {
+        if (! empty($data['contact_id']) && empty($data['company_id'])) {
+            $contact = Contact::find($data['contact_id']);
+            if ($contact?->company_id) {
+                $data['company_id'] = $contact->company_id;
+            }
+        }
+
+        return $data;
     }
 
     /**

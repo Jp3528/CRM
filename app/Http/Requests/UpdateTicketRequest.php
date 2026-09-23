@@ -22,12 +22,22 @@ class UpdateTicketRequest extends FormRequest
      */
     public function rules(): array
     {
+        $ticket = $this->route('ticket');
+        $currentAssigneeId = $ticket instanceof Ticket ? $ticket->assigned_to : null;
+
         return [
             'company_id' => ['nullable', 'integer', 'exists:companies,id'],
             'contact_id' => ['nullable', 'integer', 'exists:contacts,id'],
             'requester_name' => ['nullable', 'string', 'max:255'],
             'requester_email' => ['nullable', 'email', 'max:255'],
-            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+            'assigned_to' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(
+                    fn ($query) => $query->where('status', 'active')
+                        ->when($currentAssigneeId, fn ($q) => $q->orWhere('id', $currentAssigneeId))
+                ),
+            ],
             'category_id' => ['nullable', 'integer', 'exists:ticket_categories,id'],
             'subject' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -42,7 +52,7 @@ class UpdateTicketRequest extends FormRequest
             'subject.required' => 'El asunto es obligatorio.',
             'priority.in' => 'La prioridad seleccionada no es válida.',
             'contact_id.exists' => 'El contacto seleccionado no existe.',
-            'assigned_to.exists' => 'El usuario asignado no existe.',
+            'assigned_to.exists' => 'El usuario asignado no existe o está inactivo.',
         ];
     }
 

@@ -23,7 +23,11 @@ class StoreTicketRequest extends FormRequest
             'contact_id' => ['nullable', 'integer', 'exists:contacts,id'],
             'requester_name' => ['nullable', 'string', 'max:255'],
             'requester_email' => ['nullable', 'email', 'max:255'],
-            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+            'assigned_to' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where('status', 'active'),
+            ],
             'category_id' => ['nullable', 'integer', 'exists:ticket_categories,id'],
             'subject' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -39,7 +43,7 @@ class StoreTicketRequest extends FormRequest
             'priority.in' => 'La prioridad seleccionada no es válida.',
             'channel.in' => 'El canal seleccionado no es válido.',
             'contact_id.exists' => 'El contacto seleccionado no existe.',
-            'assigned_to.exists' => 'El usuario asignado no existe.',
+            'assigned_to.exists' => 'El usuario asignado no existe o está inactivo.',
         ];
     }
 
