@@ -8,6 +8,7 @@ use App\Models\DataImportError;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Team;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Imports\ImportService;
 use App\Support\DataScope;
@@ -347,5 +348,143 @@ class PhaseThirteenTest extends TestCase
             'data_import_id' => $import->id,
             'row_number' => 2,
         ]);
+    }
+
+    public function test_guest_cannot_access_export(): void
+    {
+        $response = $this->get(route('exports.module', ['module' => 'companies']));
+        $response->assertRedirect(route('login'));
+    }
+
+    public function test_user_without_exports_view_cannot_export(): void
+    {
+        $user = $this->makeUser(['companies.view']);
+        $response = $this->actingAs($user)->get(route('exports.module', ['module' => 'companies']));
+        $response->assertForbidden();
+    }
+
+    public function test_user_without_module_view_permission_cannot_export(): void
+    {
+        $user = $this->makeUser(['exports.view']); // falta companies.view
+        $response = $this->actingAs($user)->get(route('exports.module', ['module' => 'companies']));
+        $response->assertForbidden();
+    }
+
+    public function test_user_can_export_companies_csv_streamed(): void
+    {
+        $user = $this->makeUser(['exports.view', 'companies.view'], roles: ['Administrador']);
+
+        Company::factory()->create([
+            'trade_name' => 'Tech Solutions S.A.',
+            'tax_id' => '900999888-1',
+            'owner_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('exports.module', ['module' => 'companies']));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $content = $response->streamedContent();
+
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
+        $this->assertStringContainsString('Nombre Comercial', $content);
+        $this->assertStringContainsString('Tech Solutions S.A.', $content);
+        $this->assertStringContainsString('900999888-1', $content);
+    }
+
+    public function test_export_enforces_datascope(): void
+    {
+        $userA = $this->makeUser(['exports.view', 'companies.view'], roles: ['Vendedor']);
+        $userB = $this->makeUser(['exports.view', 'companies.view'], roles: ['Vendedor']);
+
+        // Empresa de User A
+        Company::factory()->create([
+            'trade_name' => 'Empresa de Vendedor A',
+            'owner_id' => $userA->id,
+        ]);
+
+        // Empresa de User B
+        Company::factory()->create([
+            'trade_name' => 'Empresa de Vendedor B',
+            'owner_id' => $userB->id,
+        ]);
+
+        // Vendedor A exporta: solo debe ver su propia empresa
+        $responseA = $this->actingAs($userA)->get(route('exports.module', ['module' => 'companies']));
+        $contentA = $responseA->streamedContent();
+
+        $this->assertStringContainsString('Empresa de Vendedor A', $contentA);
+        $this->assertStringNotContainsString('Empresa de Vendedor B', $contentA);
+    }
+
+    public function test_export_respects_query_filters(): void
+    {
+        $user = $this->makeUser(['exports.view', 'companies.view'], roles: ['Administrador']);
+
+        Company::factory()->create([
+            'trade_name' => 'Alfa Corp',
+            'status' => 'active',
+            'owner_id' => $user->id,
+        ]);
+
+        Company::factory()->create([
+            'trade_name' => 'Beta Inactiva',
+            'status' => 'inactive',
+            'owner_id' => $user->id,
+        ]);
+
+        // Filtrar por status=active
+        $response = $this->actingAs($user)->get(route('exports.module', [
+            'module' => 'companies',
+            'status' => 'active',
+        ]));
+
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('Alfa Corp', $content);
+        $this->assertStringNotContainsString('Beta Inactiva', $content);
+    }
+
+    public function test_export_neutralizes_formula_injection(): void
+    {
+        $user = $this->makeUser(['exports.view', 'companies.view'], roles: ['Administrador']);
+
+        Company::factory()->create([
+            'trade_name' => '=HYPERLINK("http://evil.com","Click")',
+            'owner_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('exports.module', ['module' => 'companies']));
+        $content = $response->streamedContent();
+
+        // Debe haber sido neutralizado con comilla simple
+        $this->assertStringContainsString("'=HYPERLINK", $content);
+    }
+
+    public function test_export_aborts_for_unsupported_module(): void
+    {
+        $user = $this->makeUser(['exports.view']);
+        $response = $this->actingAs($user)->get(route('exports.module', ['module' => 'unknown_mod']));
+        $response->assertNotFound();
+    }
+
+    public function test_ticket_print_view(): void
+    {
+        $user = $this->makeUser(['tickets.view'], roles: ['Administrador']);
+
+        $ticket = Ticket::create([
+            'number' => 'TKT-2026-000001',
+            'subject' => 'Problema con acceso al portal',
+            'description' => 'El cliente no puede ingresar al sistema.',
+            'status' => 'open',
+            'priority' => 'high',
+            'channel' => 'web',
+            'created_by' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('tickets.print', $ticket));
+        $response->assertOk();
+        $response->assertSee('TKT-2026-000001');
+        $response->assertSee('Problema con acceso al portal');
+        $response->assertSee('El cliente no puede ingresar al sistema.');
     }
 }

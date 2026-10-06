@@ -30,6 +30,14 @@
             <div class="flex gap-2 md:col-span-6">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('companies.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
+                @if (auth()->user()?->hasPermission('exports.view'))
+                    <a href="{{ route('exports.module', array_merge(['module' => 'companies'], request()->query())) }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50" title="Descargar registros filtrados en CSV compatible con Excel">
+                        <svg class="mr-1.5 h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Exportar CSV
+                    </a>
+                @endif
                 @can('create', App\Models\Company::class)
                     <a href="{{ route('companies.create') }}" class="ml-auto inline-flex items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Nueva empresa</a>
                 @endcan
