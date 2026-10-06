@@ -185,4 +185,19 @@ class OpportunityStageService
             'loss_reason' => null,
         ];
     }
+
+    /**
+     * Sincroniza la probabilidad de las oportunidades abiertas vinculadas a una etapa cuando esta cambia.
+     * Mantiene los cierres históricos (won/lost) sin modificar.
+     */
+    public function syncOpenOpportunitiesProbability(PipelineStage $stage): int
+    {
+        if ($stage->is_won || $stage->is_lost) {
+            return 0;
+        }
+
+        return Opportunity::where('pipeline_stage_id', $stage->id)
+            ->where('status', 'open')
+            ->update(['probability' => $stage->probability]);
+    }
 }

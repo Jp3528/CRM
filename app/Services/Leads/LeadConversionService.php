@@ -94,10 +94,11 @@ class LeadConversionService
             // ---- Oportunidad opcional (dato backend; su UI completa es Fase 5).
             $opportunity = null;
             if (! empty($data['create_opportunity'])) {
-                $pipeline = Pipeline::where('name', 'Ventas')->first()
-                    ?? Pipeline::where('is_default', true)->first()
+                $pipeline = Pipeline::where('is_default', true)->where('status', 'active')->first()
+                    ?? Pipeline::where('status', 'active')->orderBy('id')->first()
                     ?? Pipeline::orderBy('id')->firstOrFail();
-                $stage = $pipeline->stages()->orderBy('position')->firstOrFail();
+                $stage = $pipeline->stages()->where('is_won', false)->where('is_lost', false)->where('status', 'active')->orderBy('position')->first()
+                    ?? $pipeline->stages()->orderBy('position')->firstOrFail();
 
                 $opportunity = Opportunity::create([
                     'name' => $data['opportunity_name'],

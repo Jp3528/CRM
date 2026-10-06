@@ -16,6 +16,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataImportController;
+use App\Http\Controllers\DataQualityController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\InvoiceController;
@@ -27,7 +28,10 @@ use App\Http\Controllers\LeadReportController;
 use App\Http\Controllers\MessageTemplateController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\OpportunityStageController;
+use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\PipelineReportController;
+use App\Http\Controllers\PipelineStageController;
+use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
@@ -40,10 +44,12 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\SaleStatusController;
 use App\Http\Controllers\SaleToInvoiceController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SupportReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskStatusController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TicketCategoryController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketMessageController;
 use App\Http\Controllers\TicketStatusController;
@@ -271,8 +277,26 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('roles/{role}', [RolePermissionController::class, 'update'])->name('roles.update');
     Route::post('roles/{role}/reset', [RolePermissionController::class, 'reset'])->name('roles.reset');
 
-    // Placeholders controlados de módulos futuros (Fase 15: Configuración).
-    Route::get('/settings', fn () => response()->view('coming-soon', [
-        'module' => 'Configuración',
-    ]))->name('settings.index');
+    // Configuración general y preferencias del negocio (Fase 15).
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings/reset', [SettingController::class, 'reset'])->name('settings.reset');
+    Route::get('/settings/quality', [DataQualityController::class, 'index'])->name('settings.quality');
+
+    // Pipelines y etapas comerciales (Fase 15).
+    Route::resource('settings/pipelines', PipelineController::class)->names('settings.pipelines');
+    Route::post('settings/pipelines/{pipeline}/stages', [PipelineStageController::class, 'store'])
+        ->name('settings.pipelines.stages.store');
+    Route::put('settings/pipelines/{pipeline}/stages/{stage}', [PipelineStageController::class, 'update'])
+        ->name('settings.pipelines.stages.update');
+    Route::delete('settings/pipelines/{pipeline}/stages/{stage}', [PipelineStageController::class, 'destroy'])
+        ->name('settings.pipelines.stages.destroy');
+    Route::post('settings/pipelines/{pipeline}/stages/reorder', [PipelineStageController::class, 'reorder'])
+        ->name('settings.pipelines.stages.reorder');
+
+    // Catálogos de categorías (Fase 15).
+    Route::resource('settings/product-categories', ProductCategoryController::class)
+        ->names('settings.product-categories');
+    Route::resource('settings/ticket-categories', TicketCategoryController::class)
+        ->names('settings.ticket-categories');
 });

@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
 class PermissionSeeder extends Seeder
 {
     /** Permisos base predecibles por módulo. */
-    public const GROUPS = ['users', 'companies', 'contacts', 'leads', 'opportunities', 'tasks', 'teams', 'roles'];
+    public const GROUPS = ['users', 'companies', 'contacts', 'leads', 'opportunities', 'tasks', 'teams', 'roles', 'settings', 'pipelines'];
 
     public const ACTIONS = ['view', 'create', 'update', 'delete'];
 
@@ -69,6 +69,12 @@ class PermissionSeeder extends Seeder
         ['name' => 'imports.view', 'label' => 'View Imports', 'description' => 'Permite ver el historial y estado de importaciones.', 'group' => 'imports'],
         ['name' => 'imports.create', 'label' => 'Create Imports', 'description' => 'Permite subir, previsualizar y confirmar importaciones de datos.', 'group' => 'imports'],
         ['name' => 'exports.view', 'label' => 'Export Data', 'description' => 'Permite exportar listados y reportes a CSV, XLSX o PDF.', 'group' => 'exports'],
+        // Fase 15 — Configuración, pipelines y catálogos.
+        ['name' => 'pipelines.archive', 'label' => 'Archive Pipelines', 'description' => 'Permite archivar pipelines y etapas.', 'group' => 'pipelines'],
+        ['name' => 'categories.view', 'label' => 'View Categories', 'description' => 'Permite ver catálogos de categorías.', 'group' => 'categories'],
+        ['name' => 'categories.create', 'label' => 'Create Categories', 'description' => 'Permite crear categorías de productos y tickets.', 'group' => 'categories'],
+        ['name' => 'categories.update', 'label' => 'Update Categories', 'description' => 'Permite editar y archivar categorías.', 'group' => 'categories'],
+        ['name' => 'categories.delete', 'label' => 'Delete Categories', 'description' => 'Permite eliminar categorías no utilizadas.', 'group' => 'categories'],
     ];
 
     public function run(): void

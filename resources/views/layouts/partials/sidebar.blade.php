@@ -42,7 +42,7 @@ $navAdmin = [
     ['label' => 'Usuarios', 'route' => 'admin.users.index', 'can' => 'users.view', 'soon' => false],
     ['label' => 'Equipos', 'route' => 'teams.index', 'can' => 'teams.view', 'soon' => false],
     ['label' => 'Roles y permisos', 'route' => 'roles.index', 'can' => 'roles.view', 'soon' => false],
-    ['label' => 'Configuración', 'route' => 'settings.index', 'can' => 'users.view', 'soon' => true],
+    ['label' => 'Configuración', 'route' => 'settings.index', 'can' => 'settings.view', 'soon' => false],
 ];
 $isActive = fn (string $route) => request()->routeIs($route) || request()->routeIs($route.'.*');
 $canSee = function (array $item) use ($user): bool {
@@ -77,11 +77,11 @@ $canSee = function (array $item) use ($user): bool {
                 </ul>
             @endif
         @endforeach
-        @if ($user && ($user->hasPermission('users.view') || $user->hasPermission('teams.view') || $user->hasPermission('roles.view')))
+        @if ($user && ($user->hasPermission('users.view') || $user->hasPermission('teams.view') || $user->hasPermission('roles.view') || $user->hasPermission('settings.view')))
             <p class="px-2 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Administración</p>
             <ul class="space-y-1">
                 @foreach ($navAdmin as $item)
-                    @if ($user->hasPermission($item['can']))
+                    @if ($canSee($item))
                         <li>
                             <a href="{{ route($item['route']) }}"
                                class="flex items-center justify-between rounded-md px-3 py-2 {{ $isActive($item['route']) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
@@ -126,11 +126,11 @@ $canSee = function (array $item) use ($user): bool {
                     </ul>
                 @endif
             @endforeach
-            @if ($user && ($user->hasPermission('users.view') || $user->hasPermission('teams.view') || $user->hasPermission('roles.view')))
+            @if ($user && ($user->hasPermission('users.view') || $user->hasPermission('teams.view') || $user->hasPermission('roles.view') || $user->hasPermission('settings.view')))
                 <p class="px-2 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Administración</p>
                 <ul class="space-y-1">
                     @foreach ($navAdmin as $item)
-                        @if ($user->hasPermission($item['can']))
+                        @if ($canSee($item))
                             <li>
                                 <a href="{{ route($item['route']) }}"
                                    class="flex items-center justify-between rounded-md px-3 py-2 {{ $isActive($item['route']) ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
