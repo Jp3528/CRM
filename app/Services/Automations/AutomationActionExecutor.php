@@ -23,7 +23,7 @@ final class AutomationActionExecutor
 {
     /**
      * @param  array<string, mixed>  $action
-     * @return array<string, mixed>  Resultado estructurado (sin objetos).
+     * @return array<string, mixed> Resultado estructurado (sin objetos).
      *
      * @throws ValidationException ante fallos de ejecución.
      */

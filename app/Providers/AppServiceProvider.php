@@ -42,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
                 return null;
             }
 
-            if (DataScope::isReadOnly($user) && in_array($ability, DataScope::WRITE_ABILITIES, true)) {
+            if (DataScope::isReadOnly($user) && DataScope::isWriteAbility($ability)) {
                 return false;
             }
 

@@ -6,12 +6,15 @@ use App\Http\Requests\StoreCampaignRequest;
 use App\Http\Requests\UpdateCampaignRequest;
 use App\Models\Activity;
 use App\Models\Campaign;
+use App\Models\CampaignMember;
 use App\Models\Communication;
 use App\Models\Contact;
 use App\Models\Lead;
+use App\Models\User;
 use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class CampaignController extends Controller
@@ -232,9 +235,9 @@ class CampaignController extends Controller
     /**
      * Hidrata objetivos visibles en una colección de miembros (evita N+1).
      *
-     * @param  \Illuminate\Support\Collection<int, \App\Models\CampaignMember>  $members
+     * @param  Collection<int, CampaignMember>  $members
      */
-    private function attachTargets(\Illuminate\Support\Collection $members, \App\Models\User $user): void
+    private function attachTargets(Collection $members, User $user): void
     {
         $contactIds = $members->where('member_type', 'contact')->pluck('member_id')->unique()->all();
         $leadIds = $members->where('member_type', 'lead')->pluck('member_id')->unique()->all();

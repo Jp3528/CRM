@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLeadRequest;
 use App\Http\Requests\UpdateLeadRequest;
+use App\Models\Campaign;
+use App\Models\CampaignMember;
+use App\Models\Communication;
 use App\Models\Lead;
 use App\Models\Tag;
-use App\Models\User;
 use App\Support\DataScope;
 use App\Support\SyncsTags;
 use Illuminate\Http\RedirectResponse;
@@ -108,15 +110,15 @@ class LeadController extends Controller
             'tasks' => fn ($q) => $q->visibleTo($user)->with(['assignee:id,name', 'creator:id,name'])->latest()->limit(10),
         ]);
 
-        $memberCampaignIds = \App\Models\CampaignMember::where('member_type', 'lead')
+        $memberCampaignIds = CampaignMember::where('member_type', 'lead')
             ->where('member_id', $lead->id)
             ->pluck('campaign_id')
             ->all();
-        $recentCampaigns = $user->can('viewAny', \App\Models\Campaign::class) && $memberCampaignIds !== []
-            ? \App\Models\Campaign::visibleTo($user)->whereKey($memberCampaignIds)->latest()->limit(5)->get()
+        $recentCampaigns = $user->can('viewAny', Campaign::class) && $memberCampaignIds !== []
+            ? Campaign::visibleTo($user)->whereKey($memberCampaignIds)->latest()->limit(5)->get()
             : collect();
-        $recentCommunications = $user->can('viewAny', \App\Models\Communication::class)
-            ? \App\Models\Communication::visibleTo($user)->where('lead_id', $lead->id)->latest()->limit(5)->get()
+        $recentCommunications = $user->can('viewAny', Communication::class)
+            ? Communication::visibleTo($user)->where('lead_id', $lead->id)->latest()->limit(5)->get()
             : collect();
 
         return view('leads.show', [
@@ -127,8 +129,8 @@ class LeadController extends Controller
             'canViewConvertedContact' => DataScope::canViewModel($user, $lead->convertedContact),
             'recentCampaigns' => $recentCampaigns,
             'recentCommunications' => $recentCommunications,
-            'canViewCampaigns' => $user->can('viewAny', \App\Models\Campaign::class),
-            'canViewCommunications' => $user->can('viewAny', \App\Models\Communication::class),
+            'canViewCampaigns' => $user->can('viewAny', Campaign::class),
+            'canViewCommunications' => $user->can('viewAny', Communication::class),
         ]);
     }
 

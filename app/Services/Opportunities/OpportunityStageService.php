@@ -2,7 +2,9 @@
 
 namespace App\Services\Opportunities;
 
+use App\Models\Company;
 use App\Models\Contact;
+use App\Models\Lead;
 use App\Models\Opportunity;
 use App\Models\PipelineStage;
 use App\Models\User;
@@ -17,15 +19,16 @@ class OpportunityStageService
      * Registra historial inicial (from null) + actividad.
      *
      * @param  array<string, mixed>  $data  Datos validados de StoreOpportunityRequest.
+     *
      * @throws ValidationException
      */
     public function create(array $data, User $actor): Opportunity
     {
         return DB::transaction(function () use ($data, $actor) {
             $data['owner_id'] = DataScope::normalizeOwnerId($actor, $data['owner_id'] ?? null);
-            DataScope::assertVisibleId($actor, \App\Models\Company::class, $data['company_id'] ?? null);
+            DataScope::assertVisibleId($actor, Company::class, $data['company_id'] ?? null);
             DataScope::assertVisibleId($actor, Contact::class, $data['contact_id'] ?? null);
-            DataScope::assertVisibleId($actor, \App\Models\Lead::class, $data['lead_id'] ?? null);
+            DataScope::assertVisibleId($actor, Lead::class, $data['lead_id'] ?? null);
             DataScope::assertCanAssignUser($actor, $data['owner_id'] ?? null);
 
             $stage = PipelineStage::findOrFail($data['pipeline_stage_id']);

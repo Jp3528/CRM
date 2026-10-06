@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use App\Support\RelatedEntity;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -69,7 +70,7 @@ class Task extends Model
         return $route && $this->taskable ? route($route, $this->taskable) : null;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Task>  $query */
+    /** @param  Builder<Task>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -84,7 +85,7 @@ class Task extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Task>  $query */
+    /** @param  Builder<Task>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -94,7 +95,7 @@ class Task extends Model
         return $query->where('tasks.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Task>  $query */
+    /** @param  Builder<Task>  $query */
     public function scopePriority($query, ?string $priority)
     {
         if (blank($priority)) {
@@ -104,7 +105,7 @@ class Task extends Model
         return $query->where('tasks.priority', $priority);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Task>  $query */
+    /** @param  Builder<Task>  $query */
     public function scopeAssignedTo($query, mixed $userId)
     {
         if (blank($userId)) {
@@ -117,14 +118,14 @@ class Task extends Model
     /**
      * Alcance de datos (Fase 9.5): asignadas o creadas por el usuario/equipo.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Task>  $query
+     * @param  Builder<Task>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeTasks($query, $user);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Task>  $query */
+    /** @param  Builder<Task>  $query */
     public function scopeRelatedType($query, ?string $key)
     {
         if (blank($key)) {
@@ -140,7 +141,7 @@ class Task extends Model
         return $class ? $query->where('tasks.taskable_type', $class) : $query;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Task>  $query */
+    /** @param  Builder<Task>  $query */
     public function scopeDue($query, ?string $preset)
     {
         return match ($preset) {

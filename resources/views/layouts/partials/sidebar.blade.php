@@ -40,8 +40,8 @@ $navSections = [
 ];
 $navAdmin = [
     ['label' => 'Usuarios', 'route' => 'admin.users.index', 'can' => 'users.view', 'soon' => false],
-    ['label' => 'Equipos', 'route' => 'teams.index', 'can' => 'users.view', 'soon' => true],
-    ['label' => 'Roles y permisos', 'route' => 'roles.index', 'can' => 'users.view', 'soon' => true],
+    ['label' => 'Equipos', 'route' => 'teams.index', 'can' => 'teams.view', 'soon' => false],
+    ['label' => 'Roles y permisos', 'route' => 'roles.index', 'can' => 'roles.view', 'soon' => false],
     ['label' => 'Configuración', 'route' => 'settings.index', 'can' => 'users.view', 'soon' => true],
 ];
 $isActive = fn (string $route) => request()->routeIs($route) || request()->routeIs($route.'.*');
@@ -77,7 +77,7 @@ $canSee = function (array $item) use ($user): bool {
                 </ul>
             @endif
         @endforeach
-        @if ($user && $user->hasPermission('users.view'))
+        @if ($user && ($user->hasPermission('users.view') || $user->hasPermission('teams.view') || $user->hasPermission('roles.view')))
             <p class="px-2 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Administración</p>
             <ul class="space-y-1">
                 @foreach ($navAdmin as $item)
@@ -126,7 +126,7 @@ $canSee = function (array $item) use ($user): bool {
                     </ul>
                 @endif
             @endforeach
-            @if ($user && $user->hasPermission('users.view'))
+            @if ($user && ($user->hasPermission('users.view') || $user->hasPermission('teams.view') || $user->hasPermission('roles.view')))
                 <p class="px-2 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Administración</p>
                 <ul class="space-y-1">
                     @foreach ($navAdmin as $item)

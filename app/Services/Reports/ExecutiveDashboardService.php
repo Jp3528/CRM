@@ -14,6 +14,8 @@ use App\Models\Sale;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\DataScope;
+use App\Support\ReportFormat;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -84,7 +86,7 @@ final class ExecutiveDashboardService
             'deals' => $rows->sum('deals'),
             'by_currency' => $rows->mapWithKeys(fn ($r) => [$r->currency => [
                 'amount' => $r->amount !== null ? (string) $r->amount : null,
-                'trend' => \App\Support\ReportFormat::trend(
+                'trend' => ReportFormat::trend(
                     $r->amount !== null ? (float) $r->amount : null,
                     isset($prev[$r->currency]) ? (float) $prev[$r->currency] : null
                 ),
@@ -181,7 +183,7 @@ final class ExecutiveDashboardService
     /** @return array<string, int> */
     private function tasks(): array
     {
-        $base = fn () => \App\Support\DataScope::visibleRecords($this->user, Task::class);
+        $base = fn () => DataScope::visibleRecords($this->user, Task::class);
         $assignee = $this->filters->ownerId ?? $this->user->id;
         $assigned = fn () => (clone $base())->where('tasks.assigned_to', $assignee);
 

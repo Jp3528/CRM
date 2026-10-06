@@ -45,7 +45,7 @@ final class AutomationTriggerDispatcher
             );
         };
 
-        if (static::$sync || DB::transactionLevel() === 0) {
+        if (self::$sync || DB::transactionLevel() === 0) {
             $job();
 
             return;
@@ -56,11 +56,11 @@ final class AutomationTriggerDispatcher
 
     public static function enableSync(): void
     {
-        static::$sync = true;
+        self::$sync = true;
     }
 
     public static function disableSync(): void
     {
-        static::$sync = false;
+        self::$sync = false;
     }
 }

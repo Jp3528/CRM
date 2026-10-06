@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\DataScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -38,7 +39,7 @@ class DataImport extends Model
         return $this->hasMany(DataImportError::class)->orderBy('row_number');
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<DataImport>  $query */
+    /** @param  Builder<DataImport>  $query */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeCreatedBy($query, $user);

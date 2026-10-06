@@ -6,11 +6,11 @@ use App\Http\Requests\StoreSaleRequest;
 use App\Http\Requests\UpdateSaleRequest;
 use App\Models\Company;
 use App\Models\Contact;
+use App\Models\Invoice;
 use App\Models\Opportunity;
 use App\Models\Product;
 use App\Models\QuoteItem;
 use App\Models\Sale;
-use App\Models\User;
 use App\Services\Sales\SaleCreationService;
 use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
@@ -118,7 +118,7 @@ class SaleController extends Controller
             'canUpdate' => $user->can('update', $sale),
             'editable' => $sale->status === 'draft',
             'quoteSourced' => $sale->quote_id !== null,
-            'canCreateInvoice' => $user->can('create', \App\Models\Invoice::class),
+            'canCreateInvoice' => $user->can('create', Invoice::class),
             'canViewCompany' => DataScope::canViewModel($user, $sale->company),
             'canViewContact' => DataScope::canViewModel($user, $sale->contact),
             'canViewOpportunity' => DataScope::canViewModel($user, $sale->opportunity),

@@ -2,14 +2,14 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Quote;
+use App\Models\Sale;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ConvertQuoteToSaleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', \App\Models\Sale::class) ?? false;
+        return $this->user()?->can('create', Sale::class) ?? false;
     }
 
     /**

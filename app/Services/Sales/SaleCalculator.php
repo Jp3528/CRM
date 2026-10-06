@@ -3,6 +3,7 @@
 namespace App\Services\Sales;
 
 use App\Services\Quotes\QuoteCalculator;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Cálculo de ventas manuales. Delega en QuoteCalculator: la matemática
@@ -17,7 +18,7 @@ final class SaleCalculator
      * @param  array<int, array<string, mixed>>  $lines
      * @return array{lines: array<int, array<string, string>>, subtotal: string, discount_total: string, tax_total: string, total: string}
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function calculate(array $lines): array
     {

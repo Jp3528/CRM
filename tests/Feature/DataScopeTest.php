@@ -11,6 +11,7 @@ use App\Models\Opportunity;
 use App\Models\Permission;
 use App\Models\Pipeline;
 use App\Models\Quote;
+use App\Models\Role;
 use App\Models\Sale;
 use App\Models\Task;
 use App\Models\Team;
@@ -69,7 +70,7 @@ class DataScopeTest extends TestCase
 
         foreach ($roles as $role) {
             $user->roles()->attach(
-                \App\Models\Role::where('name', $role)->firstOrFail()->id
+                Role::where('name', $role)->firstOrFail()->id
             );
         }
 

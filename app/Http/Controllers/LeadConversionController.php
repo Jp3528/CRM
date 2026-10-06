@@ -6,7 +6,6 @@ use App\Http\Requests\ConvertLeadRequest;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Lead;
-use App\Models\User;
 use App\Services\Leads\LeadConversionService;
 use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;

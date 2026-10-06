@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\QuoteFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -91,7 +92,7 @@ class Quote extends Model
             && ! in_array($this->status, ['accepted', 'rejected'], true);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  Builder<Quote>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -115,7 +116,7 @@ class Quote extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  Builder<Quote>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -125,7 +126,7 @@ class Quote extends Model
         return $query->where('quotes.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  Builder<Quote>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -138,14 +139,14 @@ class Quote extends Model
     /**
      * Alcance de datos (Fase 9.5): filtra por propietario/equipo según rol.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query
+     * @param  Builder<Quote>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeOwned($query, $user);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  Builder<Quote>  $query */
     public function scopeForCompany($query, mixed $companyId)
     {
         if (blank($companyId)) {
@@ -155,7 +156,7 @@ class Quote extends Model
         return $query->where('quotes.company_id', $companyId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  Builder<Quote>  $query */
     public function scopeCurrency($query, ?string $currency)
     {
         if (blank($currency)) {
@@ -165,7 +166,7 @@ class Quote extends Model
         return $query->where('quotes.currency', $currency);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Quote>  $query */
+    /** @param  Builder<Quote>  $query */
     public function scopeIssuedBetween($query, mixed $from, mixed $to)
     {
         if (! blank($from)) {

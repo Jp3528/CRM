@@ -100,8 +100,10 @@ class User extends Authenticatable
         }
 
         return $this->roles()
-            ->where('name', 'Superadministrador')
-            ->orWhere('slug', 'superadministrador')
+            ->where(function ($q) {
+                $q->where('name', 'Superadministrador')
+                    ->orWhere('slug', 'superadministrador');
+            })
             ->exists();
     }
 
@@ -114,8 +116,10 @@ class User extends Authenticatable
         }
 
         return $this->roles()
-            ->where('name', $role)
-            ->orWhere('slug', $role)
+            ->where(function ($q) use ($role) {
+                $q->where('name', $role)
+                    ->orWhere('slug', $role);
+            })
             ->exists();
     }
 

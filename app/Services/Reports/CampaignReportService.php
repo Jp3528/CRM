@@ -2,11 +2,11 @@
 
 namespace App\Services\Reports;
 
-use App\Models\Automation;
-use App\Models\AutomationRun;
 use App\Models\Campaign;
 use App\Models\CampaignMember;
 use App\Models\Communication;
+use App\Models\Contact;
+use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -34,8 +34,8 @@ final class CampaignReportService
         $members = $campaignIds === [] ? collect() : CampaignMember::whereIn('campaign_id', $campaignIds)->get();
         $contactIds = $members->where('member_type', 'contact')->pluck('member_id')->unique()->all();
         $leadIds = $members->where('member_type', 'lead')->pluck('member_id')->unique()->all();
-        $visibleContacts = $contactIds === [] ? [] : \App\Models\Contact::visibleTo($this->user)->whereIn('id', $contactIds)->pluck('id')->all();
-        $visibleLeads = $leadIds === [] ? [] : \App\Models\Lead::visibleTo($this->user)->whereIn('id', $leadIds)->pluck('id')->all();
+        $visibleContacts = $contactIds === [] ? [] : Contact::visibleTo($this->user)->whereIn('id', $contactIds)->pluck('id')->all();
+        $visibleLeads = $leadIds === [] ? [] : Lead::visibleTo($this->user)->whereIn('id', $leadIds)->pluck('id')->all();
 
         $visibleMembers = $members->filter(fn ($m) => $m->member_type === 'contact'
             ? in_array($m->member_id, $visibleContacts, true)

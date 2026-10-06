@@ -4,6 +4,7 @@ namespace App\Services\Automations;
 
 use App\Models\Automation;
 use App\Models\AutomationRun;
+use App\Models\User;
 use App\Support\AutomationCatalog;
 use App\Support\ConditionEvaluator;
 use App\Support\DataScope;
@@ -12,6 +13,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -59,7 +61,7 @@ final class AutomationRunner
 
         $correlationId ??= (string) Str::uuid();
         $eventUuid ??= (string) Str::uuid();
-        $triggeredBy = $triggeredById ? \App\Models\User::find($triggeredById) : null;
+        $triggeredBy = $triggeredById ? User::find($triggeredById) : null;
 
         $baseContext = array_merge($context, [
             'entity_type' => $subjectKey,
@@ -106,7 +108,7 @@ final class AutomationRunner
         Model $subject,
         string $subjectKey,
         array $context,
-        ?\App\Models\User $triggeredBy,
+        ?User $triggeredBy,
         string $correlationId,
         int $depth,
         string $eventUuid,
@@ -188,7 +190,7 @@ final class AutomationRunner
                     $freshSubject = $subject->fresh();
 
                     if (! $freshSubject || (method_exists($freshSubject, 'trashed') && $freshSubject->trashed())) {
-                        throw \Illuminate\Validation\ValidationException::withMessages([
+                        throw ValidationException::withMessages([
                             'subject' => 'Registro no disponible.',
                         ]);
                     }
@@ -271,7 +273,7 @@ final class AutomationRunner
 
     private function safeMessage(Throwable $e): string
     {
-        if ($e instanceof \Illuminate\Validation\ValidationException) {
+        if ($e instanceof ValidationException) {
             $first = collect($e->errors())->flatten()->first();
 
             return is_string($first) && $first !== '' ? $first : 'Error de ejecución.';

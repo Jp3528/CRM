@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use App\Support\RelatedEntity;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -63,7 +64,7 @@ class Activity extends Model
         return $route && $this->subjectable ? route($route, $this->subjectable) : null;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Activity>  $query */
+    /** @param  Builder<Activity>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -78,7 +79,7 @@ class Activity extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Activity>  $query */
+    /** @param  Builder<Activity>  $query */
     public function scopeType($query, ?string $type)
     {
         if (blank($type)) {
@@ -88,7 +89,7 @@ class Activity extends Model
         return $query->where('activities.type', $type);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Activity>  $query */
+    /** @param  Builder<Activity>  $query */
     public function scopeForUser($query, mixed $userId)
     {
         if (blank($userId)) {
@@ -101,14 +102,14 @@ class Activity extends Model
     /**
      * Alcance de datos (Fase 9.5): del autor en alcance o de entidad visible.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Activity>  $query
+     * @param  Builder<Activity>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeActivities($query, $user);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Activity>  $query */
+    /** @param  Builder<Activity>  $query */
     public function scopeRelatedType($query, ?string $key)
     {
         if (blank($key)) {
@@ -124,7 +125,7 @@ class Activity extends Model
         return $class ? $query->where('activities.subjectable_type', $class) : $query;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Activity>  $query */
+    /** @param  Builder<Activity>  $query */
     public function scopeScheduledBetween($query, mixed $from, mixed $to)
     {
         if (! blank($from)) {

@@ -10,7 +10,6 @@ use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\Lead;
-use App\Models\MessageTemplate;
 use App\Models\Opportunity;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -46,7 +45,26 @@ final class DataScope
     public const TEAM_ROLES = ['Gerente comercial', 'Supervisor'];
 
     /** Habilidades de escritura bloqueadas para el rol Consulta puro. */
-    public const WRITE_ABILITIES = ['create', 'update', 'delete', 'move', 'convert', 'execute'];
+    public const WRITE_ABILITIES = ['create', 'update', 'delete', 'move', 'convert', 'execute', 'assign', 'import', 'assign_access'];
+
+    /**
+     * Determina si una habilidad o permiso corresponde a una acción de escritura.
+     * Soporta tanto nombres simples ('create') como con namespace ('companies.create', 'teams.assign').
+     */
+    public static function isWriteAbility(string $ability): bool
+    {
+        if (in_array($ability, self::WRITE_ABILITIES, true)) {
+            return true;
+        }
+
+        foreach (self::WRITE_ABILITIES as $action) {
+            if (str_ends_with($ability, ".{$action}")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /**
      * Memoización por OBJETO (WeakMap), no por ID: los IDs se reutilizan
@@ -67,12 +85,12 @@ final class DataScope
 
     protected static function levels(): \WeakMap
     {
-        return self::$levelCache ??= new \WeakMap();
+        return self::$levelCache ??= new \WeakMap;
     }
 
     protected static function ownerIdsMap(): \WeakMap
     {
-        return self::$ownerIdsCache ??= new \WeakMap();
+        return self::$ownerIdsCache ??= new \WeakMap;
     }
 
     public static function level(User $user): string

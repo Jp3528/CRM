@@ -10,6 +10,7 @@ use App\Models\Pipeline;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Quote;
+use App\Models\QuoteItem;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\PipelineSeeder;
@@ -176,7 +177,7 @@ class PhaseSevenTest extends TestCase
         $this->actingAs($user)->post('/quotes', $this->quotePayload($company, [], [
             $this->itemPayload(['product_id' => $product->id, 'description' => null, 'unit_price' => null, 'tax_rate' => null]),
         ]))->assertRedirect();
-        $itemId = \App\Models\QuoteItem::firstOrFail()->id;
+        $itemId = QuoteItem::firstOrFail()->id;
 
         $this->actingAs($user)->put("/products/{$product->id}", $this->productPayload([
             'sku' => $product->sku, 'price' => '999.00',
@@ -327,7 +328,7 @@ class PhaseSevenTest extends TestCase
             $this->itemPayload(['product_id' => $product->id, 'description' => null, 'unit_price' => null, 'tax_rate' => null]),
         ]))->assertRedirect();
 
-        $item = \App\Models\QuoteItem::firstOrFail();
+        $item = QuoteItem::firstOrFail();
 
         $product->update(['name' => 'Cambiado', 'price' => '999.00', 'tax_rate' => '50.00']);
 
@@ -365,7 +366,7 @@ class PhaseSevenTest extends TestCase
         $response->assertRedirect('/quotes/create');
         $response->assertSessionHasErrors('items.0.discount_value');
         $this->assertSame(0, Quote::count());
-        $this->assertSame(0, \App\Models\QuoteItem::count());
+        $this->assertSame(0, QuoteItem::count());
     }
 
     public function test_update_draft_replaces_items_transactionally(): void

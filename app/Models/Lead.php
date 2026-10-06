@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\LeadFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -92,7 +93,7 @@ class Lead extends Model
         return $this->status === 'converted' || $this->converted_at !== null;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    /** @param  Builder<Lead>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -110,7 +111,7 @@ class Lead extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    /** @param  Builder<Lead>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -120,7 +121,7 @@ class Lead extends Model
         return $query->where('leads.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    /** @param  Builder<Lead>  $query */
     public function scopeSource($query, ?string $source)
     {
         if (blank($source)) {
@@ -130,7 +131,7 @@ class Lead extends Model
         return $query->where('leads.source', $source);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    /** @param  Builder<Lead>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -143,14 +144,14 @@ class Lead extends Model
     /**
      * Alcance de datos (Fase 9.5): filtra por propietario/equipo según rol.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query
+     * @param  Builder<Lead>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeOwned($query, $user);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    /** @param  Builder<Lead>  $query */
     public function scopeScoreBetween($query, mixed $min, mixed $max)
     {
         if (! blank($min)) {
@@ -164,7 +165,7 @@ class Lead extends Model
         return $query;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Lead>  $query */
+    /** @param  Builder<Lead>  $query */
     public function scopeConverted($query, ?string $value)
     {
         if ($value === 'yes') {

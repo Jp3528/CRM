@@ -9,12 +9,14 @@ use Illuminate\Database\Seeder;
 class PermissionSeeder extends Seeder
 {
     /** Permisos base predecibles por módulo. */
-    public const GROUPS = ['users', 'companies', 'contacts', 'leads', 'opportunities', 'tasks'];
+    public const GROUPS = ['users', 'companies', 'contacts', 'leads', 'opportunities', 'tasks', 'teams', 'roles'];
 
     public const ACTIONS = ['view', 'create', 'update', 'delete'];
 
     /** Permisos adicionales fuera de la matriz módulo×acción (idempotentes). */
     public const EXTRA = [
+        ['name' => 'users.assign_access', 'label' => 'Assign User Access', 'description' => 'Permite asignar roles y permisos a usuarios.', 'group' => 'users'],
+        ['name' => 'teams.assign', 'label' => 'Assign Team Members', 'description' => 'Permite asignar o mover usuarios de equipo.', 'group' => 'teams'],
         ['name' => 'leads.convert', 'label' => 'Convert Leads', 'description' => 'Permite convertir leads en empresa/contacto (y oportunidad opcional).', 'group' => 'leads'],
         ['name' => 'activities.view', 'label' => 'View Activities', 'description' => 'Permite ver actividades.', 'group' => 'activities'],
         ['name' => 'activities.create', 'label' => 'Create Activities', 'description' => 'Permite registrar actividades manuales.', 'group' => 'activities'],

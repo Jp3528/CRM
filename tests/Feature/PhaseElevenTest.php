@@ -7,13 +7,16 @@ use App\Models\Automation;
 use App\Models\AutomationRun;
 use App\Models\Campaign;
 use App\Models\CampaignMember;
+use App\Models\Communication;
 use App\Models\Company;
 use App\Models\Contact;
+use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Opportunity;
 use App\Models\Permission;
 use App\Models\Pipeline;
 use App\Models\Quote;
+use App\Models\Role;
 use App\Models\Sale;
 use App\Models\Task;
 use App\Models\Team;
@@ -22,8 +25,10 @@ use App\Models\User;
 use App\Observers\AutomationObserver;
 use App\Services\Automations\AutomationTriggerDispatcher;
 use App\Services\Opportunities\OpportunityStageService;
+use App\Services\Quotes\QuoteService;
+use App\Services\Sales\InvoiceCreationService;
+use App\Services\Sales\SaleCreationService;
 use App\Services\Tickets\TicketStatusService;
-use App\Support\AutomationCatalog;
 use App\Support\ConditionEvaluator;
 use App\Support\DataScope;
 use Database\Seeders\PermissionSeeder;
@@ -78,7 +83,7 @@ class PhaseElevenTest extends TestCase
         }
 
         foreach ($roles as $role) {
-            $user->roles()->attach(\App\Models\Role::where('name', $role)->firstOrFail()->id);
+            $user->roles()->attach(Role::where('name', $role)->firstOrFail()->id);
         }
 
         return $user->fresh();
@@ -442,13 +447,13 @@ class PhaseElevenTest extends TestCase
         $this->makeAutomation($user, ['name' => 'C', 'trigger_type' => 'campaign.status_changed']);
 
         $quote = Quote::factory()->create(['status' => 'draft', 'company_id' => $company->id, 'owner_id' => $user->id]);
-        app(\App\Services\Quotes\QuoteService::class)->transition($quote, 'sent', $user);
+        app(QuoteService::class)->transition($quote, 'sent', $user);
 
         $sale = Sale::factory()->create(['status' => 'draft', 'company_id' => $company->id, 'owner_id' => $user->id]);
-        app(\App\Services\Sales\SaleCreationService::class)->transition($sale, 'confirmed', $user);
+        app(SaleCreationService::class)->transition($sale, 'confirmed', $user);
 
-        $invoice = \App\Models\Invoice::factory()->create(['status' => 'draft', 'company_id' => $company->id, 'owner_id' => $user->id]);
-        app(\App\Services\Sales\InvoiceCreationService::class)->transition($invoice, 'sent', $user);
+        $invoice = Invoice::factory()->create(['status' => 'draft', 'company_id' => $company->id, 'owner_id' => $user->id]);
+        app(InvoiceCreationService::class)->transition($invoice, 'sent', $user);
 
         $campaign = Campaign::factory()->create(['status' => 'draft', 'owner_id' => $user->id, 'created_by' => $user->id]);
         $campaign->update(['status' => 'active']);
@@ -666,7 +671,7 @@ class PhaseElevenTest extends TestCase
         AutomationTriggerDispatcher::dispatch('lead.created', $lead, [], $user->id);
 
         $this->assertSame(1, CampaignMember::where('campaign_id', $campaign->id)->count());
-        $this->assertSame(0, \App\Models\Communication::count());
+        $this->assertSame(0, Communication::count());
     }
 
     public function test_add_to_campaign_rejects_out_of_scope_campaign(): void

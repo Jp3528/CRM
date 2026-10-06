@@ -7,6 +7,7 @@ use App\Models\Contact;
 use App\Models\Lead;
 use App\Models\Opportunity;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Whitelist centralizada de entidades relacionables polimórficamente
@@ -56,7 +57,7 @@ final class RelatedEntity
     }
 
     /**
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public static function findOrFail(string $key, mixed $id): Model
     {

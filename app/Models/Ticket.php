@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\TicketFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -114,7 +115,7 @@ class Ticket extends Model
         return $this->created_at->diffInSeconds($this->resolved_at);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query */
+    /** @param  Builder<Ticket>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -139,7 +140,7 @@ class Ticket extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query */
+    /** @param  Builder<Ticket>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -149,7 +150,7 @@ class Ticket extends Model
         return $query->where('tickets.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query */
+    /** @param  Builder<Ticket>  $query */
     public function scopePriority($query, ?string $priority)
     {
         if (blank($priority)) {
@@ -159,7 +160,7 @@ class Ticket extends Model
         return $query->where('tickets.priority', $priority);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query */
+    /** @param  Builder<Ticket>  $query */
     public function scopeCategory($query, mixed $categoryId)
     {
         if (blank($categoryId)) {
@@ -169,7 +170,7 @@ class Ticket extends Model
         return $query->where('tickets.category_id', $categoryId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query */
+    /** @param  Builder<Ticket>  $query */
     public function scopeAssignedTo($query, mixed $userId)
     {
         if ($userId === 'unassigned') {
@@ -186,14 +187,14 @@ class Ticket extends Model
     /**
      * Alcance de datos (Fase 9.5): regla de soporte por rol.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query
+     * @param  Builder<Ticket>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeTickets($query, $user);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query */
+    /** @param  Builder<Ticket>  $query */
     public function scopeForCompany($query, mixed $companyId)
     {
         if (blank($companyId)) {
@@ -203,7 +204,7 @@ class Ticket extends Model
         return $query->where('tickets.company_id', $companyId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Ticket>  $query */
+    /** @param  Builder<Ticket>  $query */
     public function scopeChannel($query, ?string $channel)
     {
         if (blank($channel)) {

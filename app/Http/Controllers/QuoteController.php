@@ -10,6 +10,7 @@ use App\Models\Opportunity;
 use App\Models\Product;
 use App\Models\Quote;
 use App\Models\QuoteItem;
+use App\Models\Sale;
 use App\Models\User;
 use App\Services\Quotes\QuoteService;
 use App\Support\DataScope;
@@ -120,7 +121,7 @@ class QuoteController extends Controller
             'canUpdate' => $user->can('update', $quote),
             'editable' => in_array($quote->status, Quote::EDITABLE_STATUSES, true),
             'sale' => $quote->sale()->visibleTo($user)->first(['id', 'number', 'status', 'total', 'currency']),
-            'canCreateSale' => $user->can('create', \App\Models\Sale::class),
+            'canCreateSale' => $user->can('create', Sale::class),
             'canViewCompany' => DataScope::canViewModel($user, $quote->company),
             'canViewContact' => DataScope::canViewModel($user, $quote->contact),
             'canViewOpportunity' => DataScope::canViewModel($user, $quote->opportunity),

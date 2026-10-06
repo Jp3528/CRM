@@ -10,6 +10,7 @@ class ProductCategory extends Model
 {
     /** @use HasFactory<ProductCategoryFactory> */
     use HasFactory;
+
     protected $fillable = ['name', 'slug', 'status'];
 
     /** @return HasMany<Product, $this> */

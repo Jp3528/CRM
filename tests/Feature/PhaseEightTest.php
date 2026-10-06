@@ -5,14 +5,16 @@ namespace Tests\Feature;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Invoice;
-use App\Models\Opportunity;
+use App\Models\InvoiceItem;
 use App\Models\Permission;
-use App\Models\Pipeline;
 use App\Models\Product;
 use App\Models\Quote;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\User;
+use App\Services\Quotes\QuoteService;
+use App\Services\Sales\InvoiceCreationService;
+use App\Services\Sales\SaleCreationService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\PipelineSeeder;
 use Database\Seeders\RoleSeeder;
@@ -97,7 +99,7 @@ class PhaseEightTest extends TestCase
 
     private function acceptedQuote(User $user, Company $company, array $items = []): Quote
     {
-        $quotes = app(\App\Services\Quotes\QuoteService::class);
+        $quotes = app(QuoteService::class);
         $quote = $quotes->create($this->quotePayload($company, ['owner_id' => $user->id], $items), $user);
 
         return $quotes->transition($quote, 'accepted', $user);
@@ -105,7 +107,7 @@ class PhaseEightTest extends TestCase
 
     private function convertQuote(User $user, Quote $quote, array $overrides = []): Sale
     {
-        $sales = app(\App\Services\Sales\SaleCreationService::class);
+        $sales = app(SaleCreationService::class);
 
         return $sales->fromQuote($quote, $user, $overrides);
     }
@@ -318,7 +320,7 @@ class PhaseEightTest extends TestCase
     {
         $user = $this->fullAccess();
         $company = Company::factory()->create(['owner_id' => $user->id]);
-        $quotes = app(\App\Services\Quotes\QuoteService::class);
+        $quotes = app(QuoteService::class);
         $quote = $quotes->create($this->quotePayload($company, ['owner_id' => $user->id]), $user);
 
         $this->actingAs($user)->get("/quotes/{$quote->id}/sale/create")->assertRedirect();
@@ -352,7 +354,7 @@ class PhaseEightTest extends TestCase
         $company = Company::factory()->create(['owner_id' => $user->id]);
         $product = Product::factory()->create(['name' => 'Original', 'price' => '100.00', 'tax_rate' => '10.00']);
 
-        $quotes = app(\App\Services\Quotes\QuoteService::class);
+        $quotes = app(QuoteService::class);
         $quote = $quotes->create($this->quotePayload($company, ['owner_id' => $user->id], [
             $this->itemPayload(['product_id' => $product->id, 'description' => null, 'unit_price' => null, 'tax_rate' => null]),
         ]), $user);
@@ -401,7 +403,7 @@ class PhaseEightTest extends TestCase
         ]);
         $sale = $this->convertQuote($user, $quote);
         $sale->update(['contact_id' => $contact->id]);
-        $sales = app(\App\Services\Sales\SaleCreationService::class);
+        $sales = app(SaleCreationService::class);
         $sale = $sales->transition($sale, 'confirmed', $user);
 
         $response = $this->actingAs($user)->post("/sales/{$sale->id}/invoice", [
@@ -450,12 +452,12 @@ class PhaseEightTest extends TestCase
         $company = Company::factory()->create(['owner_id' => $user->id]);
         $quote = $this->acceptedQuote($user, $company);
         $sale = $this->convertQuote($user, $quote);
-        $sales = app(\App\Services\Sales\SaleCreationService::class);
+        $sales = app(SaleCreationService::class);
         $sale = $sales->transition($sale, 'confirmed', $user);
 
         $this->actingAs($user)->post("/sales/{$sale->id}/invoice", [])->assertRedirect();
         $this->assertSame(1, Invoice::count());
-        $items = \App\Models\InvoiceItem::count();
+        $items = InvoiceItem::count();
 
         $response = $this->actingAs($user)->from("/sales/{$sale->id}")
             ->post("/sales/{$sale->id}/invoice", []);
@@ -463,7 +465,7 @@ class PhaseEightTest extends TestCase
         $response->assertRedirect("/sales/{$sale->id}");
         $response->assertSessionHasErrors('sale');
         $this->assertSame(1, Invoice::count());
-        $this->assertSame($items, \App\Models\InvoiceItem::count());
+        $this->assertSame($items, InvoiceItem::count());
     }
 
     public function test_invoice_snapshot_survives_later_changes(): void
@@ -475,7 +477,7 @@ class PhaseEightTest extends TestCase
             $this->itemPayload(['product_id' => $product->id, 'description' => null, 'unit_price' => null, 'tax_rate' => null]),
         ]);
         $sale = $this->convertQuote($user, $quote);
-        $sales = app(\App\Services\Sales\SaleCreationService::class);
+        $sales = app(SaleCreationService::class);
         $sale = $sales->transition($sale, 'confirmed', $user);
         $this->actingAs($user)->post("/sales/{$sale->id}/invoice", [])->assertRedirect();
         $invoice = Invoice::firstOrFail();
@@ -526,7 +528,7 @@ class PhaseEightTest extends TestCase
     {
         $user = $this->invoiceAccess();
         $invoice = Invoice::factory()->create(['owner_id' => $user->id]);
-        \App\Models\InvoiceItem::factory()->create(['invoice_id' => $invoice->id]);
+        InvoiceItem::factory()->create(['invoice_id' => $invoice->id]);
 
         $this->actingAs($user)->get("/invoices/{$invoice->id}/print")
             ->assertOk()->assertSee('Sin validez fiscal');
@@ -570,7 +572,7 @@ class PhaseEightTest extends TestCase
         $company = Company::factory()->create(['owner_id' => $user->id]);
         $quote = $this->acceptedQuote($user, $company);
         $sale = $this->convertQuote($user, $quote);
-        $sales = app(\App\Services\Sales\SaleCreationService::class);
+        $sales = app(SaleCreationService::class);
         $sale = $sales->transition($sale, 'confirmed', $user);
         $this->actingAs($user)->post("/sales/{$sale->id}/invoice", [])->assertRedirect();
 
@@ -580,7 +582,7 @@ class PhaseEightTest extends TestCase
 
         // Tras cancelar la factura, la venta sí puede cancelarse.
         $invoice = Invoice::firstOrFail();
-        $invoices = app(\App\Services\Sales\InvoiceCreationService::class);
+        $invoices = app(InvoiceCreationService::class);
         $invoices->transition($invoice, 'cancelled', $user);
         $this->actingAs($user)->patch("/sales/{$sale->id}/cancel")->assertRedirect();
         $this->assertSame('cancelled', $sale->fresh()->status);
@@ -594,7 +596,7 @@ class PhaseEightTest extends TestCase
         $quote = $this->acceptedQuote($user, $company);
         $sale = $this->convertQuote($user, $quote);
         $sale->update(['contact_id' => $contact->id]);
-        $sales = app(\App\Services\Sales\SaleCreationService::class);
+        $sales = app(SaleCreationService::class);
         $sale = $sales->transition($sale, 'confirmed', $user);
         $this->actingAs($user)->post("/sales/{$sale->id}/invoice", [
             'due_date' => now()->addDays(2)->format('Y-m-d'),

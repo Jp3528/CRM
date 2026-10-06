@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\ProductFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -64,7 +65,7 @@ class Product extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Product>  $query */
+    /** @param  Builder<Product>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -83,7 +84,7 @@ class Product extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Product>  $query */
+    /** @param  Builder<Product>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -93,7 +94,7 @@ class Product extends Model
         return $query->where('products.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Product>  $query */
+    /** @param  Builder<Product>  $query */
     public function scopeCategory($query, mixed $categoryId)
     {
         if (blank($categoryId)) {
@@ -103,7 +104,7 @@ class Product extends Model
         return $query->where('products.category_id', $categoryId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Product>  $query */
+    /** @param  Builder<Product>  $query */
     public function scopeUnit($query, ?string $unit)
     {
         if (blank($unit)) {

@@ -5,8 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
+use App\Models\Contact;
+use App\Models\Invoice;
+use App\Models\Quote;
+use App\Models\Sale;
 use App\Models\Tag;
-use App\Models\User;
+use App\Models\Ticket;
 use App\Support\DataScope;
 use App\Support\SyncsTags;
 use Illuminate\Http\RedirectResponse;
@@ -113,11 +117,11 @@ class CompanyController extends Controller
         return view('companies.show', [
             'company' => $company,
             'canUpdate' => $viewer->can('update', $company),
-            'canCreateContact' => $viewer->can('create', \App\Models\Contact::class),
-            'canViewQuotes' => $viewer->can('viewAny', \App\Models\Quote::class),
-            'canViewSales' => $viewer->can('viewAny', \App\Models\Sale::class),
-            'canViewInvoices' => $viewer->can('viewAny', \App\Models\Invoice::class),
-            'canViewTickets' => $viewer->can('viewAny', \App\Models\Ticket::class),
+            'canCreateContact' => $viewer->can('create', Contact::class),
+            'canViewQuotes' => $viewer->can('viewAny', Quote::class),
+            'canViewSales' => $viewer->can('viewAny', Sale::class),
+            'canViewInvoices' => $viewer->can('viewAny', Invoice::class),
+            'canViewTickets' => $viewer->can('viewAny', Ticket::class),
         ]);
     }
 

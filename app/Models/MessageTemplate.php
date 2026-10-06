@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\DataScope;
 use App\Support\TemplateVariables;
 use Database\Factories\MessageTemplateFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,7 +43,7 @@ class MessageTemplate extends Model
         return TemplateVariables::render($this->body, $data ?: TemplateVariables::sample());
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<MessageTemplate>  $query */
+    /** @param  Builder<MessageTemplate>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -58,7 +59,7 @@ class MessageTemplate extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<MessageTemplate>  $query */
+    /** @param  Builder<MessageTemplate>  $query */
     public function scopeChannel($query, ?string $channel)
     {
         if (blank($channel)) {
@@ -68,7 +69,7 @@ class MessageTemplate extends Model
         return $query->where('message_templates.channel', $channel);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<MessageTemplate>  $query */
+    /** @param  Builder<MessageTemplate>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -78,7 +79,7 @@ class MessageTemplate extends Model
         return $query->where('message_templates.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<MessageTemplate>  $query */
+    /** @param  Builder<MessageTemplate>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -88,7 +89,7 @@ class MessageTemplate extends Model
         return $query->where('message_templates.owner_id', $ownerId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<MessageTemplate>  $query */
+    /** @param  Builder<MessageTemplate>  $query */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeOwned($query, $user);

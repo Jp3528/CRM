@@ -5,13 +5,14 @@ namespace Tests\Feature;
 use App\Models\Campaign;
 use App\Models\CampaignMember;
 use App\Models\Communication;
-use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Lead;
 use App\Models\MessageTemplate;
 use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Campaigns\CampaignCommunicationService;
 use App\Support\DataScope;
 use App\Support\TemplateVariables;
 use Database\Seeders\PermissionSeeder;
@@ -20,6 +21,7 @@ use Database\Seeders\RoleSeeder;
 use Database\Seeders\TicketCategorySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 /**
@@ -56,7 +58,7 @@ class PhaseTenTest extends TestCase
         }
 
         foreach ($roles as $role) {
-            $user->roles()->attach(\App\Models\Role::where('name', $role)->firstOrFail()->id);
+            $user->roles()->attach(Role::where('name', $role)->firstOrFail()->id);
         }
 
         return $user->fresh();
@@ -544,11 +546,11 @@ class PhaseTenTest extends TestCase
         }
 
         try {
-            \App\Services\Campaigns\CampaignCommunicationService::bulkSimulate($campaign, $members, [
+            CampaignCommunicationService::bulkSimulate($campaign, $members, [
                 'channel' => 'email', 'body' => 'Hola',
             ], $user);
             $this->fail('Debió abortar por límite.');
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             $this->assertSame(422, $e->getStatusCode());
         }
 

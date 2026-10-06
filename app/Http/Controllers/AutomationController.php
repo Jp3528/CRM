@@ -6,10 +6,13 @@ use App\Http\Requests\StoreAutomationRequest;
 use App\Http\Requests\UpdateAutomationRequest;
 use App\Models\Automation;
 use App\Models\AutomationRun;
+use App\Models\User;
 use App\Support\AutomationCatalog;
 use App\Support\AutomationDefinitionValidator;
 use App\Support\ConditionEvaluator;
 use App\Support\DataScope;
+use App\Support\RelatedEntity;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -316,7 +319,7 @@ class AutomationController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function dryContext(string $trigger, \Illuminate\Database\Eloquent\Model $subject): array
+    private function dryContext(string $trigger, Model $subject): array
     {
         // Contexto actual del registro (previous_* quedan null en dry run).
         $context = [];
@@ -346,7 +349,7 @@ class AutomationController extends Controller
     /**
      * @return array<int, array<string, string>>
      */
-    private function dryPlan(Automation $automation, \Illuminate\Database\Eloquent\Model $subject, string $subjectKey, \App\Models\User $viewer): array
+    private function dryPlan(Automation $automation, Model $subject, string $subjectKey, User $viewer): array
     {
         $plan = [];
 
@@ -354,7 +357,7 @@ class AutomationController extends Controller
             $type = $action['type'] ?? 'desconocida';
             $detail = match ($type) {
                 'create_task' => 'Tarea "'.$action['title'].'" (prioridad '.$action['priority'].', +'.$action['due_in_days'].' días, para '.$action['assigned_to_mode'].')'
-                    .($subjectKey && \App\Support\RelatedEntity::classFor($subjectKey) ? ' relacionada al registro.' : ' sin relación.'),
+                    .($subjectKey && RelatedEntity::classFor($subjectKey) ? ' relacionada al registro.' : ' sin relación.'),
                 'create_activity' => 'Actividad '.$action['activity_type'].' "'.$action['subject'].'" relacionada al registro.',
                 'assign_owner' => 'Reasignar responsable a '.$action['target_mode'].'.',
                 'add_to_campaign' => 'Agregar a campaña #'.$action['campaign_id'].'.',

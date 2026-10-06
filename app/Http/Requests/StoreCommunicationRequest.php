@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Communication;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreCommunicationRequest extends FormRequest
 {
@@ -29,9 +30,9 @@ class StoreCommunicationRequest extends FormRequest
         ];
     }
 
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function (\Illuminate\Validation\Validator $validator) {
+        $validator->after(function (Validator $validator) {
             $contactId = $this->input('contact_id');
             $leadId = $this->input('lead_id');
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\CommunicationFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -95,7 +96,7 @@ class Communication extends Model
         return $this->contact ?? $this->lead;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Communication>  $query */
+    /** @param  Builder<Communication>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -110,7 +111,7 @@ class Communication extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Communication>  $query */
+    /** @param  Builder<Communication>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -120,7 +121,7 @@ class Communication extends Model
         return $query->where('communications.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Communication>  $query */
+    /** @param  Builder<Communication>  $query */
     public function scopeChannel($query, ?string $channel)
     {
         if (blank($channel)) {
@@ -130,7 +131,7 @@ class Communication extends Model
         return $query->where('communications.channel', $channel);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Communication>  $query */
+    /** @param  Builder<Communication>  $query */
     public function scopeForCampaign($query, mixed $campaignId)
     {
         if (blank($campaignId)) {
@@ -140,7 +141,7 @@ class Communication extends Model
         return $query->where('communications.campaign_id', $campaignId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Communication>  $query */
+    /** @param  Builder<Communication>  $query */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeCommunications($query, $user);

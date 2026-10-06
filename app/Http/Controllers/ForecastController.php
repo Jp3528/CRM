@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ReportFilterRequest;
 use App\Models\Opportunity;
 use App\Services\Reports\ForecastService;
-use App\Services\Reports\ReportFilters;
 use App\Support\DataScope;
 use Illuminate\View\View;
 

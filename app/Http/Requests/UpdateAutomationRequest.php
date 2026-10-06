@@ -6,6 +6,7 @@ use App\Models\Automation;
 use App\Support\AutomationCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateAutomationRequest extends FormRequest
 {
@@ -36,9 +37,9 @@ class UpdateAutomationRequest extends FormRequest
         ];
     }
 
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function (\Illuminate\Validation\Validator $validator) {
+        $validator->after(function (Validator $validator) {
             $automation = $this->route('automation');
 
             // Active no se edita directamente: pause → edit → activate.

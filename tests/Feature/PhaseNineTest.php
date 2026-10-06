@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Company;
 use App\Models\Contact;
+use App\Models\Lead;
 use App\Models\Permission;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
@@ -92,7 +93,7 @@ class PhaseNineTest extends TestCase
         ]);
 
         foreach (['new' => false, 'contacted' => false, 'qualified' => true, 'unqualified' => false] as $status => $visible) {
-            $lead = \App\Models\Lead::factory()->create(['status' => $status, 'owner_id' => $user->id]);
+            $lead = Lead::factory()->create(['status' => $status, 'owner_id' => $user->id]);
             $response = $this->actingAs($user)->get("/leads/{$lead->id}")->assertOk();
 
             if ($visible) {

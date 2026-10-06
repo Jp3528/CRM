@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\CompanyFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -87,7 +88,7 @@ class Company extends Model
         return $this->morphMany(Task::class, 'taskable');
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    /** @param  Builder<Company>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -105,7 +106,7 @@ class Company extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    /** @param  Builder<Company>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -115,7 +116,7 @@ class Company extends Model
         return $query->where('status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    /** @param  Builder<Company>  $query */
     public function scopeIndustry($query, ?string $industry)
     {
         if (blank($industry)) {
@@ -125,7 +126,7 @@ class Company extends Model
         return $query->where('industry', $industry);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    /** @param  Builder<Company>  $query */
     public function scopeCountry($query, ?string $country)
     {
         if (blank($country)) {
@@ -135,7 +136,7 @@ class Company extends Model
         return $query->where('country', $country);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Company>  $query */
+    /** @param  Builder<Company>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -149,7 +150,7 @@ class Company extends Model
      * Alcance de datos (Fase 9.5): filtra por propietario/equipo según rol.
      * Sin N+1 ni filtrado en PHP: todo en SQL.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Company>  $query
+     * @param  Builder<Company>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {

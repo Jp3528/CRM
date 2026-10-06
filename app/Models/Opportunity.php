@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\OpportunityFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -127,7 +128,7 @@ class Opportunity extends Model
         return in_array($this->status, ['won', 'lost'], true);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    /** @param  Builder<Opportunity>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -150,7 +151,7 @@ class Opportunity extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    /** @param  Builder<Opportunity>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -160,7 +161,7 @@ class Opportunity extends Model
         return $query->where('opportunities.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    /** @param  Builder<Opportunity>  $query */
     public function scopePipeline($query, mixed $pipelineId)
     {
         if (blank($pipelineId)) {
@@ -170,7 +171,7 @@ class Opportunity extends Model
         return $query->where('opportunities.pipeline_id', $pipelineId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    /** @param  Builder<Opportunity>  $query */
     public function scopeStage($query, mixed $stageId)
     {
         if (blank($stageId)) {
@@ -180,7 +181,7 @@ class Opportunity extends Model
         return $query->where('opportunities.pipeline_stage_id', $stageId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    /** @param  Builder<Opportunity>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -193,14 +194,14 @@ class Opportunity extends Model
     /**
      * Alcance de datos (Fase 9.5): filtra por propietario/equipo según rol.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query
+     * @param  Builder<Opportunity>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeOwned($query, $user);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    /** @param  Builder<Opportunity>  $query */
     public function scopeForCompany($query, mixed $companyId)
     {
         if (blank($companyId)) {
@@ -210,7 +211,7 @@ class Opportunity extends Model
         return $query->where('opportunities.company_id', $companyId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    /** @param  Builder<Opportunity>  $query */
     public function scopeAmountBetween($query, mixed $min, mixed $max)
     {
         if (! blank($min)) {
@@ -224,7 +225,7 @@ class Opportunity extends Model
         return $query;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Opportunity>  $query */
+    /** @param  Builder<Opportunity>  $query */
     public function scopeCloseBetween($query, mixed $from, mixed $to)
     {
         if (! blank($from)) {

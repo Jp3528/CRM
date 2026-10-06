@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Lead;
+use App\Models\MessageTemplate;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -37,7 +38,7 @@ class DatabaseSeeder extends Seeder
         Lead::factory(3)->create(['owner_id' => $user->id]);
 
         // Fase 10: 2 plantillas demo (solo desarrollo, idempotentes).
-        \App\Models\MessageTemplate::firstOrCreate(
+        MessageTemplate::firstOrCreate(
             ['name' => 'Bienvenida email'],
             [
                 'channel' => 'email',
@@ -48,7 +49,7 @@ class DatabaseSeeder extends Seeder
                 'created_by' => $user->id,
             ]
         );
-        \App\Models\MessageTemplate::firstOrCreate(
+        MessageTemplate::firstOrCreate(
             ['name' => 'Recordatorio WhatsApp'],
             [
                 'channel' => 'whatsapp',

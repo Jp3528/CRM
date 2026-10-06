@@ -9,8 +9,10 @@ use App\Models\Contact;
 use App\Models\Lead;
 use App\Models\Opportunity;
 use App\Models\Pipeline;
+use App\Models\PipelineStage;
+use App\Models\Quote;
+use App\Models\Sale;
 use App\Models\Tag;
-use App\Models\User;
 use App\Services\Opportunities\OpportunityStageService;
 use App\Support\DataScope;
 use App\Support\SyncsTags;
@@ -85,7 +87,7 @@ class OpportunityController extends Controller
             ],
             'statuses' => Opportunity::STATUSES,
             'pipelines' => Pipeline::orderBy('name')->get(['id', 'name']),
-            'stages' => \App\Models\PipelineStage::with('pipeline:id,name')->orderBy('pipeline_id')->orderBy('position')->get(['id', 'name', 'pipeline_id']),
+            'stages' => PipelineStage::with('pipeline:id,name')->orderBy('pipeline_id')->orderBy('position')->get(['id', 'name', 'pipeline_id']),
             'owners' => DataScope::filterableUsers($user),
             'companies' => Company::visibleTo($user)->orderBy('trade_name')->get(['id', 'trade_name']),
         ]);
@@ -178,8 +180,8 @@ class OpportunityController extends Controller
             'opportunity' => $opportunity,
             'canUpdate' => $user->can('update', $opportunity),
             'canMove' => $user->can('move', $opportunity),
-            'canCreateQuote' => $user->can('create', \App\Models\Quote::class),
-            'canViewSales' => $user->can('viewAny', \App\Models\Sale::class),
+            'canCreateQuote' => $user->can('create', Quote::class),
+            'canViewSales' => $user->can('viewAny', Sale::class),
             'canViewCompany' => DataScope::canViewModel($user, $opportunity->company),
             'canViewContact' => DataScope::canViewModel($user, $opportunity->contact),
             'canViewLead' => DataScope::canViewModel($user, $opportunity->lead),

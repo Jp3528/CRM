@@ -6,7 +6,6 @@ use App\Models\Automation;
 use App\Models\AutomationRun;
 use App\Models\Campaign;
 use App\Models\CampaignMember;
-use App\Models\Communication;
 use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Invoice;
@@ -15,6 +14,7 @@ use App\Models\Opportunity;
 use App\Models\Permission;
 use App\Models\Pipeline;
 use App\Models\Quote;
+use App\Models\Role;
 use App\Models\Sale;
 use App\Models\Task;
 use App\Models\Team;
@@ -67,7 +67,7 @@ class PhaseTwelveTest extends TestCase
         }
 
         foreach ($roles as $role) {
-            $user->roles()->attach(\App\Models\Role::where('name', $role)->firstOrFail()->id);
+            $user->roles()->attach(Role::where('name', $role)->firstOrFail()->id);
         }
 
         return $user->fresh();

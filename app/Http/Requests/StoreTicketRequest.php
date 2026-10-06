@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Contact;
 use App\Models\Ticket;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreTicketRequest extends FormRequest
 {
@@ -47,9 +49,9 @@ class StoreTicketRequest extends FormRequest
         ];
     }
 
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function (\Illuminate\Validation\Validator $validator) {
+        $validator->after(function (Validator $validator) {
             // Nota: se lee input() crudo (no validated()) para que estas reglas
             // también corran cuando la validación base ya falló.
             $contactId = $this->input('contact_id');
@@ -62,7 +64,7 @@ class StoreTicketRequest extends FormRequest
 
             // Coherencia empresa/contacto.
             if (! empty($contactId) && ! empty($companyId)) {
-                $contact = \App\Models\Contact::find($contactId);
+                $contact = Contact::find($contactId);
                 if ($contact && $contact->company_id !== null && (int) $contact->company_id !== (int) $companyId) {
                     $validator->errors()->add('contact_id', 'El contacto pertenece a otra empresa.');
                 }

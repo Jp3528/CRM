@@ -65,7 +65,7 @@ final class AutomationCatalog
      * contexto cuando el trigger es de cambio.
      *
      * @var array<string, array<string, string>> subject => field => type
-     *      Tipos: string|integer|decimal|user_id
+     *                                           Tipos: string|integer|decimal|user_id
      */
     public const FIELDS = [
         'lead' => [

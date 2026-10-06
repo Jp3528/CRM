@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\CampaignFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -93,7 +94,7 @@ class Campaign extends Model
         return in_array($to, self::TRANSITIONS[$from] ?? [], true);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Campaign>  $query */
+    /** @param  Builder<Campaign>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -108,7 +109,7 @@ class Campaign extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Campaign>  $query */
+    /** @param  Builder<Campaign>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -118,7 +119,7 @@ class Campaign extends Model
         return $query->where('campaigns.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Campaign>  $query */
+    /** @param  Builder<Campaign>  $query */
     public function scopeType($query, ?string $type)
     {
         if (blank($type)) {
@@ -128,7 +129,7 @@ class Campaign extends Model
         return $query->where('campaigns.type', $type);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Campaign>  $query */
+    /** @param  Builder<Campaign>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -138,7 +139,7 @@ class Campaign extends Model
         return $query->where('campaigns.owner_id', $ownerId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Campaign>  $query */
+    /** @param  Builder<Campaign>  $query */
     public function scopeDateBetween($query, mixed $from, mixed $to)
     {
         if (! blank($from)) {
@@ -152,7 +153,7 @@ class Campaign extends Model
         return $query;
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Campaign>  $query */
+    /** @param  Builder<Campaign>  $query */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeOwned($query, $user);

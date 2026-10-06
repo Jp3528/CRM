@@ -11,6 +11,7 @@ use App\Models\Pipeline;
 use App\Models\PipelineStage;
 use App\Models\Tag;
 use App\Models\User;
+use App\Services\Leads\LeadConversionService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\PipelineSeeder;
 use Database\Seeders\RoleSeeder;
@@ -546,7 +547,7 @@ class PhaseFiveTest extends TestCase
         $company = Company::factory()->create(['owner_id' => $user->id]);
         $contact = Contact::factory()->create(['company_id' => $company->id, 'owner_id' => $user->id]);
 
-        $service = app(\App\Services\Leads\LeadConversionService::class);
+        $service = app(LeadConversionService::class);
         $result = $service->convert($lead, $user, [
             'company_mode' => 'existing',
             'company_id' => $company->id,

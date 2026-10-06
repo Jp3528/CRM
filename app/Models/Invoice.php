@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\InvoiceFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -87,7 +88,7 @@ class Invoice extends Model
             && ! in_array($this->status, ['paid', 'cancelled'], true);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Invoice>  $query */
+    /** @param  Builder<Invoice>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -111,7 +112,7 @@ class Invoice extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Invoice>  $query */
+    /** @param  Builder<Invoice>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -121,7 +122,7 @@ class Invoice extends Model
         return $query->where('invoices.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Invoice>  $query */
+    /** @param  Builder<Invoice>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -134,14 +135,14 @@ class Invoice extends Model
     /**
      * Alcance de datos (Fase 9.5): filtra por propietario/equipo según rol.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Invoice>  $query
+     * @param  Builder<Invoice>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeOwned($query, $user);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Invoice>  $query */
+    /** @param  Builder<Invoice>  $query */
     public function scopeForCompany($query, mixed $companyId)
     {
         if (blank($companyId)) {
@@ -151,7 +152,7 @@ class Invoice extends Model
         return $query->where('invoices.company_id', $companyId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Invoice>  $query */
+    /** @param  Builder<Invoice>  $query */
     public function scopeCurrency($query, ?string $currency)
     {
         if (blank($currency)) {
@@ -161,7 +162,7 @@ class Invoice extends Model
         return $query->where('invoices.currency', $currency);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Invoice>  $query */
+    /** @param  Builder<Invoice>  $query */
     public function scopeIssuedBetween($query, mixed $from, mixed $to)
     {
         if (! blank($from)) {

@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\Contact;
 use App\Models\Lead;
 use App\Models\Tag;
+use App\Models\User;
 use App\Support\CampaignMemberType;
 use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
@@ -195,7 +196,7 @@ class CampaignMemberController extends Controller
     }
 
     /** @param  array<string, mixed>  $filters */
-    private function contactAudienceQuery(\App\Models\User $user, array $filters)
+    private function contactAudienceQuery(User $user, array $filters)
     {
         $query = Contact::visibleTo($user)->select('contacts.id');
 
@@ -224,7 +225,7 @@ class CampaignMemberController extends Controller
     }
 
     /** @param  array<string, mixed>  $filters */
-    private function leadAudienceQuery(\App\Models\User $user, array $filters)
+    private function leadAudienceQuery(User $user, array $filters)
     {
         $query = Lead::visibleTo($user)->select('leads.id');
 

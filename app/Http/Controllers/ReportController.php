@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ReportFilterRequest;
+use App\Models\Opportunity;
 use App\Services\Reports\ReportFilters;
 use Illuminate\View\View;
 
@@ -33,7 +34,7 @@ class ReportController extends Controller
         return view('reports.index', [
             'cards' => $visible,
             'canForecast' => $user->hasPermission('reports.forecast')
-                && $user->can('viewAny', \App\Models\Opportunity::class),
+                && $user->can('viewAny', Opportunity::class),
         ]);
     }
 

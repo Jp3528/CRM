@@ -2,8 +2,11 @@
 
 namespace App\Services\Reports;
 
+use App\Models\Company;
 use App\Models\Sale;
 use App\Models\User;
+use App\Support\ReportFormat;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -47,7 +50,7 @@ final class SalesReportService
                     ? bcdiv($current, (string) $row->deals, 2)
                     : null,
                 'previous_total' => $previous,
-                'trend' => \App\Support\ReportFormat::trend(
+                'trend' => ReportFormat::trend(
                     $current !== null ? (float) $current : null,
                     $previous !== null ? (float) $previous : null
                 ),
@@ -109,8 +112,8 @@ final class SalesReportService
      */
     private function fillBuckets(array $buckets, string $bucket): array
     {
-        $start = \Carbon\CarbonImmutable::parse($this->filters->from);
-        $end = \Carbon\CarbonImmutable::parse($this->filters->to);
+        $start = CarbonImmutable::parse($this->filters->from);
+        $end = CarbonImmutable::parse($this->filters->to);
         $out = $buckets;
 
         if ($bucket === 'day' && $this->filters->days() <= 62) {
@@ -167,7 +170,7 @@ final class SalesReportService
         }
 
         // Solo nombres de empresas visibles (sin fuga por agregados).
-        $visible = \App\Models\Company::visibleTo($this->user)
+        $visible = Company::visibleTo($this->user)
             ->whereIn('id', $rows->pluck('company_id')->unique()->all())
             ->pluck('trade_name', 'id');
 

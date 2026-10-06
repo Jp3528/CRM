@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Contact;
 use App\Models\Ticket;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateTicketRequest extends FormRequest
 {
@@ -56,9 +58,9 @@ class UpdateTicketRequest extends FormRequest
         ];
     }
 
-    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function (\Illuminate\Validation\Validator $validator) {
+        $validator->after(function (Validator $validator) {
             $contactId = $this->input('contact_id');
             $companyId = $this->input('company_id');
 
@@ -67,7 +69,7 @@ class UpdateTicketRequest extends FormRequest
             }
 
             if (! empty($contactId) && ! empty($companyId)) {
-                $contact = \App\Models\Contact::find($contactId);
+                $contact = Contact::find($contactId);
                 if ($contact && $contact->company_id !== null && (int) $contact->company_id !== (int) $companyId) {
                     $validator->errors()->add('contact_id', 'El contacto pertenece a otra empresa.');
                 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\ContactFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -85,7 +86,7 @@ class Contact extends Model
         return trim("{$this->first_name} {$this->last_name}");
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    /** @param  Builder<Contact>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -107,7 +108,7 @@ class Contact extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    /** @param  Builder<Contact>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -117,7 +118,7 @@ class Contact extends Model
         return $query->where('contacts.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    /** @param  Builder<Contact>  $query */
     public function scopeForCompany($query, mixed $companyId)
     {
         if (blank($companyId)) {
@@ -127,7 +128,7 @@ class Contact extends Model
         return $query->where('contacts.company_id', $companyId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    /** @param  Builder<Contact>  $query */
     public function scopeDepartment($query, ?string $department)
     {
         if (blank($department)) {
@@ -137,7 +138,7 @@ class Contact extends Model
         return $query->where('contacts.department', $department);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query */
+    /** @param  Builder<Contact>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -150,7 +151,7 @@ class Contact extends Model
     /**
      * Alcance de datos (Fase 9.5): filtra por propietario/equipo según rol.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<Contact>  $query
+     * @param  Builder<Contact>  $query
      */
     public function scopeVisibleTo($query, User $user)
     {

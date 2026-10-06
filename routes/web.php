@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -34,13 +35,15 @@ use App\Http\Controllers\QuoteReportController;
 use App\Http\Controllers\QuoteStatusController;
 use App\Http\Controllers\QuoteToSaleController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\SaleStatusController;
 use App\Http\Controllers\SaleToInvoiceController;
-use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\SupportReportController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskStatusController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketMessageController;
 use App\Http\Controllers\TicketStatusController;
@@ -253,22 +256,23 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Exportaciones CSV de datos (Fase 13). Streaming con UTF-8 BOM, DataScope y sanitización de fórmulas.
     Route::get('exports/{module}', [ExportController::class, 'export'])->name('exports.module');
 
-    // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
-    foreach ([
-        'teams' => 'Equipos',
-        'roles' => 'Roles y permisos',
-        'settings' => 'Configuración',
-    ] as $key => $label) {
-        Route::get("/{$key}", fn () => response()->view('coming-soon', [
-            'module' => $label,
-        ]))->name("{$key}.index");
-    }
+    // Gestión de usuarios y acceso (Fase 14).
+    Route::resource('admin/users', UserController::class)->names('admin.users');
 
-    // ---------------- Admin (autorización backend real) ----------------
-    // Ejemplo operativo: solo users.view (o Superadministrador vía Gate::before).
-    Route::get('/admin/users', function () {
-        return view('admin.users-placeholder', [
-            'total' => \App\Models\User::count(),
-        ]);
-    })->middleware('permission:users.view')->name('admin.users.index');
+    // Equipos y asignación comercial (Fase 14).
+    Route::resource('teams', TeamController::class);
+    Route::post('teams/{team}/members', [TeamController::class, 'assignMember'])
+        ->name('teams.members.store');
+    Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember'])
+        ->name('teams.members.destroy');
+
+    // Matriz de roles y permisos (Fase 14).
+    Route::get('roles', [RolePermissionController::class, 'index'])->name('roles.index');
+    Route::put('roles/{role}', [RolePermissionController::class, 'update'])->name('roles.update');
+    Route::post('roles/{role}/reset', [RolePermissionController::class, 'reset'])->name('roles.reset');
+
+    // Placeholders controlados de módulos futuros (Fase 15: Configuración).
+    Route::get('/settings', fn () => response()->view('coming-soon', [
+        'module' => 'Configuración',
+    ]))->name('settings.index');
 });

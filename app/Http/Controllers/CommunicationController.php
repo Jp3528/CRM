@@ -10,6 +10,7 @@ use App\Models\Communication;
 use App\Models\Contact;
 use App\Models\Lead;
 use App\Models\MessageTemplate;
+use App\Models\User;
 use App\Services\Campaigns\CampaignCommunicationService;
 use App\Support\DataScope;
 use App\Support\TemplateVariables;
@@ -290,6 +291,7 @@ class CommunicationController extends Controller
                 foreach ($chunk as $member) {
                     if ($member->status === 'unsubscribed' || ! DataScope::canViewCampaignMember($user, $member)) {
                         $skipped++;
+
                         continue;
                     }
 
@@ -297,6 +299,7 @@ class CommunicationController extends Controller
 
                     if (! $target) {
                         $skipped++;
+
                         continue;
                     }
 
@@ -341,7 +344,7 @@ class CommunicationController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function formData(\App\Models\User $user): array
+    private function formData(User $user): array
     {
         return [
             'campaigns' => Campaign::visibleTo($user)->orderBy('name')->get(['id', 'name']),

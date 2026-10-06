@@ -74,11 +74,13 @@ final class CampaignCommunicationService
                     /** @var CampaignMember $member */
                     if ($member->status === 'unsubscribed') {
                         $skipped++;
+
                         continue;
                     }
 
                     if (! DataScope::canViewCampaignMember($actor, $member)) {
                         $skipped++;
+
                         continue;
                     }
 
@@ -86,6 +88,7 @@ final class CampaignCommunicationService
 
                     if (! $target) {
                         $skipped++;
+
                         continue;
                     }
 

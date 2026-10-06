@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\DataScope;
 use Database\Factories\AutomationFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,7 +62,7 @@ class Automation extends Model
         return in_array($this->status, ['draft', 'paused'], true);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Automation>  $query */
+    /** @param  Builder<Automation>  $query */
     public function scopeSearch($query, ?string $term)
     {
         if (blank($term)) {
@@ -76,7 +77,7 @@ class Automation extends Model
         });
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Automation>  $query */
+    /** @param  Builder<Automation>  $query */
     public function scopeStatus($query, ?string $status)
     {
         if (blank($status)) {
@@ -86,7 +87,7 @@ class Automation extends Model
         return $query->where('automations.status', $status);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Automation>  $query */
+    /** @param  Builder<Automation>  $query */
     public function scopeTrigger($query, ?string $trigger)
     {
         if (blank($trigger)) {
@@ -96,7 +97,7 @@ class Automation extends Model
         return $query->where('automations.trigger_type', $trigger);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Automation>  $query */
+    /** @param  Builder<Automation>  $query */
     public function scopeOwnedBy($query, mixed $ownerId)
     {
         if (blank($ownerId)) {
@@ -106,7 +107,7 @@ class Automation extends Model
         return $query->where('automations.owner_id', $ownerId);
     }
 
-    /** @param  \Illuminate\Database\Eloquent\Builder<Automation>  $query */
+    /** @param  Builder<Automation>  $query */
     public function scopeVisibleTo($query, User $user)
     {
         return DataScope::scopeOwned($query, $user);
