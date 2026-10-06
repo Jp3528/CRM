@@ -25,3 +25,9 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/storage/app/private/*
+!/storage/app/private/.gitignore
+*.sqlite
+*.sqlite3
+*.dump
+*.sql

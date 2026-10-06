@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: nexuscrm_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-nexuscrm}
+      POSTGRES_USER: ${DB_USERNAME:-nexuscrm}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nexuscrm_secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-nexuscrm} -d ${DB_DATABASE:-nexuscrm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexuscrm_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_NAME: ${APP_NAME:-NexusCRM}
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY:-}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-nexuscrm}
+      DB_USERNAME: ${DB_USERNAME:-nexuscrm}
+      DB_PASSWORD: ${DB_PASSWORD:-nexuscrm_secret}
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+    volumes:
+      - private_storage:/var/www/html/storage/app/private
+
+  web:
+    image: nginx:alpine
+    container_name: nexuscrm_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./public:/var/www/html/public:ro
+    depends_on:
+      - app
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexuscrm_worker
+    restart: unless-stopped
+    command: ["worker"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      app:
+        condition: service_started
+    environment:
+      APP_NAME: ${APP_NAME:-NexusCRM}
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY:-}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-nexuscrm}
+      DB_USERNAME: ${DB_USERNAME:-nexuscrm}
+      DB_PASSWORD: ${DB_PASSWORD:-nexuscrm_secret}
+      QUEUE_CONNECTION: database
+    volumes:
+      - private_storage:/var/www/html/storage/app/private
+
+volumes:
+  postgres_data:
+  private_storage:
