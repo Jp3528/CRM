@@ -75,6 +75,11 @@ class PermissionSeeder extends Seeder
         ['name' => 'categories.create', 'label' => 'Create Categories', 'description' => 'Permite crear categorías de productos y tickets.', 'group' => 'categories'],
         ['name' => 'categories.update', 'label' => 'Update Categories', 'description' => 'Permite editar y archivar categorías.', 'group' => 'categories'],
         ['name' => 'categories.delete', 'label' => 'Delete Categories', 'description' => 'Permite eliminar categorías no utilizadas.', 'group' => 'categories'],
+        // Fase 16 — Auditoría, avisos y documentos privados.
+        ['name' => 'audit.view', 'label' => 'View Audit Logs', 'description' => 'Permite consultar el registro de auditoría del sistema.', 'group' => 'audit'],
+        ['name' => 'documents.view', 'label' => 'View Documents', 'description' => 'Permite ver y descargar documentos privados adjuntos.', 'group' => 'documents'],
+        ['name' => 'documents.create', 'label' => 'Create Documents', 'description' => 'Permite subir documentos privados a entidades autorizadas.', 'group' => 'documents'],
+        ['name' => 'documents.delete', 'label' => 'Delete Documents', 'description' => 'Permite eliminar documentos privados adjuntos.', 'group' => 'documents'],
     ];
 
     public function run(): void

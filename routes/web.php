@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -26,11 +27,13 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadConversionController;
 use App\Http\Controllers\LeadReportController;
 use App\Http\Controllers\MessageTemplateController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\OpportunityStageController;
 use App\Http\Controllers\PipelineController;
 use App\Http\Controllers\PipelineReportController;
 use App\Http\Controllers\PipelineStageController;
+use App\Http\Controllers\PrivateDocumentController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -299,4 +302,19 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->names('settings.product-categories');
     Route::resource('settings/ticket-categories', TicketCategoryController::class)
         ->names('settings.ticket-categories');
+
+    // Auditoría y trazabilidad operativa (Fase 16).
+    Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
+    Route::get('audit/{auditLog}', [AuditLogController::class, 'show'])->name('audit.show');
+
+    // Centro de notificaciones internas (Fase 16).
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+
+    // Adjuntos privados en entidades comerciales y soporte (Fase 16).
+    Route::post('documents', [PrivateDocumentController::class, 'store'])->name('documents.store');
+    Route::get('documents/{document}/download', [PrivateDocumentController::class, 'download'])->name('documents.download');
+    Route::delete('documents/{document}', [PrivateDocumentController::class, 'destroy'])->name('documents.destroy');
 });

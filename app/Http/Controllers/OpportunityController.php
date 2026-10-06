@@ -13,6 +13,7 @@ use App\Models\PipelineStage;
 use App\Models\Quote;
 use App\Models\Sale;
 use App\Models\Tag;
+use App\Services\Notifications\InternalNotificationService;
 use App\Services\Opportunities\OpportunityStageService;
 use App\Support\DataScope;
 use App\Support\SyncsTags;
@@ -151,6 +152,11 @@ class OpportunityController extends Controller
         );
         $this->syncTags($opportunity, $data['tags'] ?? [], $data['new_tags'] ?? null);
 
+        if ($opportunity->owner_id && (int) $opportunity->owner_id !== (int) $request->user()->id) {
+            app(InternalNotificationService::class)
+                ->sendOpportunityOwnerChanged($opportunity, $request->user());
+        }
+
         return redirect()->route('opportunities.show', $opportunity)
             ->with('success', 'Oportunidad creada correctamente.');
     }
@@ -211,12 +217,19 @@ class OpportunityController extends Controller
         DataScope::assertVisibleId($request->user(), Lead::class, $data['lead_id'] ?? null);
         DataScope::assertCanAssignUser($request->user(), $data['owner_id'] ?? null, $opportunity->owner_id);
 
+        $oldOwnerId = $opportunity->owner_id;
+
         $opportunity->update($data);
         $this->syncTags($opportunity, $request->validated()['tags'] ?? [], $request->validated()['new_tags'] ?? null);
 
         // Vincula el contacto si aún no tiene empresa (misma empresa, explícito).
         if ($opportunity->contact && $opportunity->contact->company_id === null && $opportunity->company_id) {
             $opportunity->contact->update(['company_id' => $opportunity->company_id]);
+        }
+
+        if ($opportunity->owner_id && (int) $opportunity->owner_id !== (int) $oldOwnerId) {
+            app(InternalNotificationService::class)
+                ->sendOpportunityOwnerChanged($opportunity, $request->user());
         }
 
         return redirect()->route('opportunities.show', $opportunity)

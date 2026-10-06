@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Audit\AuditService;
 use App\Services\Users\UserProtectionService;
 use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
@@ -110,7 +111,7 @@ class UserController extends Controller
             }
         }
 
-        $user = DB::transaction(function () use ($data, $roleIds) {
+        $user = DB::transaction(function () use ($currentUser, $data, $roleIds) {
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -122,6 +123,14 @@ class UserController extends Controller
             if (! empty($roleIds)) {
                 $user->roles()->sync($roleIds);
             }
+
+            app(AuditService::class)->log(
+                $currentUser,
+                $user,
+                'user.created',
+                null,
+                $user->only(['name', 'email', 'status', 'team_id'])
+            );
 
             return $user;
         });
@@ -185,7 +194,9 @@ class UserController extends Controller
         $roleIds = $data['roles'] ?? [];
         $teamChanged = (int) ($user->team_id ?? 0) !== (int) ($data['team_id'] ?? 0);
 
-        DB::transaction(function () use ($currentUser, $user, $data, $newStatus, $roleIds) {
+        $oldValues = $user->only(['name', 'email', 'status', 'team_id']);
+
+        DB::transaction(function () use ($currentUser, $user, $data, $newStatus, $roleIds, $oldValues) {
             // Protección de estado (último superadministrador)
             if ($newStatus !== $user->status) {
                 $this->protection->updateStatus($currentUser, $user, $newStatus);
@@ -208,6 +219,14 @@ class UserController extends Controller
             }
 
             $user->update($updatePayload);
+
+            app(AuditService::class)->log(
+                $currentUser,
+                $user,
+                'user.updated',
+                $oldValues,
+                $user->only(['name', 'email', 'status', 'team_id'])
+            );
         });
 
         if ($teamChanged) {
@@ -223,9 +242,20 @@ class UserController extends Controller
         $this->authorize('delete', $user);
         $this->protection->assertCanDeleteUser($request->user(), $user);
 
-        DB::transaction(function () use ($user) {
+        $currentUser = $request->user();
+        $oldValues = $user->only(['name', 'email', 'status', 'team_id']);
+
+        DB::transaction(function () use ($currentUser, $user, $oldValues) {
             // Protección de último Superadministrador
             $this->protection->assertNotLastActiveSuperAdmin($user, 'eliminar');
+
+            app(AuditService::class)->log(
+                $currentUser,
+                $user,
+                'user.deleted',
+                $oldValues,
+                null
+            );
 
             // Soft delete seguro (preserva registros comerciales vinculados)
             $user->delete();

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Services\Audit\AuditService;
 use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,8 @@ class RolePermissionController extends Controller
 
         $permissionIds = $validated['permissions'] ?? [];
 
+        $oldPerms = $role->permissions()->pluck('name')->all();
+
         // El Superadministrador conserva siempre todos los permisos
         if ($role->name === 'Superadministrador') {
             $permissionIds = Permission::pluck('id')->all();
@@ -47,6 +50,15 @@ class RolePermissionController extends Controller
 
         $role->permissions()->sync($permissionIds);
         DataScope::clearCache();
+
+        $newPerms = $role->permissions()->pluck('name')->all();
+        app(AuditService::class)->log(
+            $request->user(),
+            $role,
+            'role.permissions_updated',
+            ['permissions' => $oldPerms],
+            ['permissions' => $newPerms]
+        );
 
         return redirect()->route('roles.index')
             ->with('status', "Matriz de permisos actualizada para el rol '{$role->name}'.");
@@ -64,11 +76,11 @@ class RolePermissionController extends Controller
             'Administrador' => Permission::where('name', '!=', 'roles.update')->pluck('name')->all(),
             'Gerente comercial' => Permission::whereIn('group', [
                 'companies', 'contacts', 'leads', 'opportunities', 'quotes', 'sales',
-                'invoices', 'tasks', 'activities', 'reports', 'campaigns', 'communications',
+                'invoices', 'tasks', 'activities', 'reports', 'campaigns', 'communications', 'documents',
             ])->pluck('name')->merge(['exports.view', 'leads.convert'])->all(),
             'Supervisor' => Permission::whereIn('group', [
                 'companies', 'contacts', 'leads', 'opportunities', 'quotes', 'sales',
-                'tickets', 'tasks', 'activities', 'teams',
+                'tickets', 'tasks', 'activities', 'teams', 'documents',
             ])->where('name', 'not like', 'teams.create')->where('name', 'not like', 'teams.delete')
                 ->pluck('name')->merge(['reports.view', 'exports.view', 'leads.convert'])->all(),
             'Vendedor' => [
@@ -80,20 +92,32 @@ class RolePermissionController extends Controller
                 'sales.view', 'sales.create',
                 'tasks.view', 'tasks.create', 'tasks.update',
                 'activities.view', 'activities.create', 'activities.update',
+                'documents.view', 'documents.create',
             ],
             'Soporte' => [
                 'tickets.view', 'tickets.create', 'tickets.update',
                 'companies.view', 'contacts.view',
                 'tasks.view', 'tasks.create', 'tasks.update',
                 'activities.view', 'activities.create', 'activities.update',
+                'documents.view', 'documents.create',
             ],
-            'Consulta' => Permission::where('name', 'like', '%.view')->pluck('name')->all(),
+            'Consulta' => Permission::where('name', 'like', '%.view')->where('name', '!=', 'audit.view')->pluck('name')->all(),
             default => [],
         };
 
+        $oldPerms = $role->permissions()->pluck('name')->all();
         $ids = Permission::whereIn('name', $defaultPerms)->pluck('id')->all();
         $role->permissions()->sync($ids);
         DataScope::clearCache();
+
+        $newPerms = $role->permissions()->pluck('name')->all();
+        app(AuditService::class)->log(
+            $request->user(),
+            $role,
+            'role.permissions_reset',
+            ['permissions' => $oldPerms],
+            ['permissions' => $newPerms]
+        );
 
         return redirect()->route('roles.index')
             ->with('status', "Permisos del rol '{$role->name}' restablecidos a los valores predeterminados.");

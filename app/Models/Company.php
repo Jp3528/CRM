@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPrivateDocuments;
 use App\Support\DataScope;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasPrivateDocuments, SoftDeletes;
 
     public const STATUSES = ['active', 'inactive'];
 

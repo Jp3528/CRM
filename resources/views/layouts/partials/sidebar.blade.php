@@ -43,6 +43,7 @@ $navAdmin = [
     ['label' => 'Equipos', 'route' => 'teams.index', 'can' => 'teams.view', 'soon' => false],
     ['label' => 'Roles y permisos', 'route' => 'roles.index', 'can' => 'roles.view', 'soon' => false],
     ['label' => 'Configuración', 'route' => 'settings.index', 'can' => 'settings.view', 'soon' => false],
+    ['label' => 'Auditoría', 'route' => 'audit.index', 'can' => 'audit.view', 'soon' => false],
 ];
 $isActive = fn (string $route) => request()->routeIs($route) || request()->routeIs($route.'.*');
 $canSee = function (array $item) use ($user): bool {

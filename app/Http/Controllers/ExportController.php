@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Audit\AuditService;
 use App\Services\Exports\ExportService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -42,6 +43,20 @@ class ExportController extends Controller
 
         // Verificar permiso de lectura del módulo específico
         abort_unless($user->hasPermission($requiredPerm), 403, "No tienes permiso para ver o exportar '{$module}'.");
+
+        // Registrar auditoría de ejecución con filtros seguros
+        $safeFilters = array_intersect_key(
+            $request->query(),
+            array_flip(['search', 'status', 'from', 'to', 'currency', 'owner_id', 'team_id', 'stage_id'])
+        );
+        app(AuditService::class)->logAction(
+            actor: $user,
+            action: 'export.executed',
+            entityType: ucfirst($module),
+            entityId: null,
+            oldValues: null,
+            newValues: ['module' => $module, 'filters' => $safeFilters]
+        );
 
         return $this->exportService->exportModule($module, $user, $request->query());
     }

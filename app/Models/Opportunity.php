@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPrivateDocuments;
 use App\Support\DataScope;
 use Database\Factories\OpportunityFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Opportunity extends Model
 {
     /** @use HasFactory<OpportunityFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasPrivateDocuments, SoftDeletes;
 
     protected $fillable = [
         'name', 'description', 'amount', 'currency', 'probability',

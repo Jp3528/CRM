@@ -161,4 +161,14 @@
             </ul>
         </x-card>
     @endif
+
+    {{-- Documentos privados adjuntos (Fase 16) --}}
+    @if (auth()->user()?->hasPermission('documents.view'))
+        <x-private-documents
+            :entity="$company"
+            type="company"
+            :canUpload="auth()->user()->can('documents.create') && auth()->user()->can('update', $company)"
+            :canDelete="auth()->user()->can('documents.delete') && auth()->user()->can('update', $company)"
+        />
+    @endif
 @endsection

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateSettingRequest;
 use App\Models\Setting;
+use App\Services\Audit\AuditService;
 use App\Services\Settings\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,10 +56,21 @@ class SettingController extends Controller
     public function update(UpdateSettingRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $oldValues = [];
 
         foreach ($validated as $key => $value) {
+            $oldValues[$key] = SettingService::get($key);
             SettingService::set($key, $value);
         }
+
+        app(AuditService::class)->logAction(
+            actor: $request->user(),
+            action: 'settings.updated',
+            entityType: 'Setting',
+            entityId: null,
+            oldValues: $oldValues,
+            newValues: $validated
+        );
 
         return redirect()->route('settings.index')
             ->with('status', 'Configuración del sistema actualizada correctamente.');
@@ -68,13 +80,27 @@ class SettingController extends Controller
     {
         $this->authorize('update', Setting::class);
 
+        $oldValues = [];
+        $newValues = [];
+
         foreach (SettingService::CATALOG as $group) {
             foreach ($group as $key => $meta) {
+                $oldValues[$key] = SettingService::get($key);
+                $newValues[$key] = $meta['default'];
                 SettingService::set($key, $meta['default']);
             }
         }
 
         SettingService::clearCache();
+
+        app(AuditService::class)->logAction(
+            actor: $request->user(),
+            action: 'settings.reset',
+            entityType: 'Setting',
+            entityId: null,
+            oldValues: $oldValues,
+            newValues: $newValues
+        );
 
         return redirect()->route('settings.index')
             ->with('status', 'Configuración restaurada a los valores predeterminados del catálogo.');

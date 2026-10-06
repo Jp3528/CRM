@@ -8,6 +8,7 @@ use App\Models\Lead;
 use App\Models\Opportunity;
 use App\Models\Pipeline;
 use App\Models\User;
+use App\Services\Audit\AuditService;
 use App\Support\DataScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -133,6 +134,19 @@ class LeadConversionService
                 'completed_at' => now(),
                 'user_id' => $actor->id,
             ]);
+
+            app(AuditService::class)->log(
+                $actor,
+                $lead,
+                'lead.converted',
+                ['status' => 'qualified'],
+                [
+                    'status' => 'converted',
+                    'company_id' => $company->id,
+                    'contact_id' => $contact->id,
+                    'opportunity_id' => $opportunity?->id,
+                ]
+            );
 
             return ['company' => $company, 'contact' => $contact, 'opportunity' => $opportunity];
         });

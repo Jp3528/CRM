@@ -6,7 +6,9 @@ use App\Http\Requests\ConfirmImportRequest;
 use App\Http\Requests\PreviewImportRequest;
 use App\Http\Requests\UploadImportRequest;
 use App\Models\DataImport;
+use App\Services\Audit\AuditService;
 use App\Services\Imports\ImportService;
+use App\Services\Notifications\InternalNotificationService;
 use App\Support\ImportCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -139,6 +141,22 @@ class DataImportController extends Controller
 
         try {
             $import = $this->importService->confirmImport($token, $request->user());
+
+            app(AuditService::class)->log(
+                $request->user(),
+                $import,
+                'import.completed',
+                null,
+                [
+                    'module' => $import->module,
+                    'total_rows' => $import->total_rows,
+                    'successful_rows' => $import->successful_rows,
+                    'failed_rows' => $import->failed_rows,
+                ]
+            );
+
+            app(InternalNotificationService::class)
+                ->sendImportCompleted($import);
 
             return redirect()->route('imports.show', $import)
                 ->with('status', "Importación finalizada. Filas exitosas: {$import->successful_rows}, Filas con error: {$import->failed_rows}.");

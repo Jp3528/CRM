@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Audit\AuditService;
 use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -75,6 +76,14 @@ class TeamController extends Controller
     {
         $team = Team::create($request->validated());
 
+        app(AuditService::class)->log(
+            $request->user(),
+            $team,
+            'team.created',
+            null,
+            $team->only(['name', 'description', 'status'])
+        );
+
         return redirect()->route('teams.show', $team)
             ->with('status', "Equipo '{$team->name}' creado correctamente.");
     }
@@ -119,8 +128,17 @@ class TeamController extends Controller
 
     public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
     {
+        $oldValues = $team->only(['name', 'description', 'status']);
         $team->update($request->validated());
         DataScope::clearCache();
+
+        app(AuditService::class)->log(
+            $request->user(),
+            $team,
+            'team.updated',
+            $oldValues,
+            $team->only(['name', 'description', 'status'])
+        );
 
         return redirect()->route('teams.show', $team)
             ->with('status', "Equipo '{$team->name}' actualizado correctamente.");
@@ -137,6 +155,16 @@ class TeamController extends Controller
         }
 
         $teamName = $team->name;
+        $oldValues = $team->only(['name', 'description', 'status']);
+
+        app(AuditService::class)->log(
+            request()->user(),
+            $team,
+            'team.deleted',
+            $oldValues,
+            null
+        );
+
         $team->delete();
         DataScope::clearCache();
 
@@ -161,6 +189,14 @@ class TeamController extends Controller
         $user->update(['team_id' => $team->id]);
         DataScope::clearCache();
 
+        app(AuditService::class)->log(
+            $request->user(),
+            $team,
+            'team.member_assigned',
+            null,
+            ['user_id' => $user->id, 'user_name' => $user->name, 'previous_team' => $previousTeam]
+        );
+
         $msg = "Usuario {$user->name} asignado al equipo '{$team->name}'.";
         if ($previousTeam) {
             $msg .= " Su pertenencia previa al equipo '{$previousTeam}' fue transferida y el alcance de sus registros se actualizó de inmediato.";
@@ -182,6 +218,14 @@ class TeamController extends Controller
 
         $user->update(['team_id' => null]);
         DataScope::clearCache();
+
+        app(AuditService::class)->log(
+            $request->user(),
+            $team,
+            'team.member_removed',
+            ['user_id' => $user->id, 'user_name' => $user->name],
+            null
+        );
 
         return redirect()->route('teams.show', $team)
             ->with('status', "Usuario {$user->name} retirado del equipo '{$team->name}'.");

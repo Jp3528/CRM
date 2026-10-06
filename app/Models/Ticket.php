@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPrivateDocuments;
 use App\Support\DataScope;
 use Database\Factories\TicketFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Ticket extends Model
 {
     /** @use HasFactory<TicketFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasPrivateDocuments, SoftDeletes;
 
     public const STATUSES = ['new', 'open', 'pending', 'resolved', 'closed'];
 

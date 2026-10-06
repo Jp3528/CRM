@@ -9,6 +9,7 @@ use App\Models\Contact;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
+use App\Services\Notifications\InternalNotificationService;
 use App\Support\DataScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -158,6 +159,11 @@ class TicketController extends Controller
             return $ticket;
         });
 
+        if ($ticket->assigned_to) {
+            app(InternalNotificationService::class)
+                ->sendTicketAssigned($ticket, $request->user());
+        }
+
         return redirect()->route('tickets.show', $ticket)
             ->with('success', "Ticket {$ticket->number} creado correctamente.");
     }
@@ -250,6 +256,11 @@ class TicketController extends Controller
                     'body' => "Prioridad cambiada de {$before['priority']} a {$ticket->priority} por {$actor->name}.",
                     'is_internal' => true,
                 ]);
+            }
+
+            if ($ticket->assigned_to && (int) ($before['assigned_to'] ?? 0) !== (int) ($ticket->assigned_to ?? 0)) {
+                app(InternalNotificationService::class)
+                    ->sendTicketAssigned($ticket, $actor);
             }
         });
 

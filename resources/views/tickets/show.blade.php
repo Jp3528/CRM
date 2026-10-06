@@ -139,4 +139,14 @@
             <p class="mt-4 text-sm text-slate-500">Ticket cerrado. Reábrelo para continuar la conversación.</p>
         @endif
     </x-card>
+
+    {{-- Documentos privados adjuntos (Fase 16) --}}
+    @if (auth()->user()?->hasPermission('documents.view'))
+        <x-private-documents
+            :entity="$ticket"
+            type="ticket"
+            :canUpload="auth()->user()->can('documents.create') && auth()->user()->can('update', $ticket)"
+            :canDelete="auth()->user()->can('documents.delete') && auth()->user()->can('update', $ticket)"
+        />
+    @endif
 @endsection

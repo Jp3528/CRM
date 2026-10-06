@@ -129,4 +129,14 @@
             </ul>
         @endif
     </x-card>
+
+    {{-- Documentos privados adjuntos (Fase 16) --}}
+    @if (auth()->user()?->hasPermission('documents.view'))
+        <x-private-documents
+            :entity="$opportunity"
+            type="opportunity"
+            :canUpload="auth()->user()->can('documents.create') && auth()->user()->can('update', $opportunity)"
+            :canDelete="auth()->user()->can('documents.delete') && auth()->user()->can('update', $opportunity)"
+        />
+    @endif
 @endsection

@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\Notifications\InternalNotificationService;
 use App\Support\DataScope;
 use App\Support\RelatedEntity;
 use Illuminate\Http\RedirectResponse;
@@ -104,6 +105,11 @@ class TaskController extends Controller
             ...$this->morphAttributes($data),
         ]);
 
+        if ($task->assigned_to) {
+            app(InternalNotificationService::class)
+                ->sendTaskAssigned($task, $request->user());
+        }
+
         return redirect()->route('tasks.show', $task)
             ->with('success', 'Tarea creada correctamente.');
     }
@@ -156,6 +162,8 @@ class TaskController extends Controller
             $completedAt = null;
         }
 
+        $oldAssignedTo = $task->assigned_to;
+
         $task->update([
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
@@ -166,6 +174,11 @@ class TaskController extends Controller
             'completed_at' => $completedAt,
             ...$this->morphAttributes($data),
         ]);
+
+        if ($task->assigned_to && (int) $task->assigned_to !== (int) $oldAssignedTo) {
+            app(InternalNotificationService::class)
+                ->sendTaskAssigned($task, $request->user());
+        }
 
         return redirect()->route('tasks.show', $task)
             ->with('success', 'Tarea actualizada correctamente.');
