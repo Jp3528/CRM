@@ -173,6 +173,29 @@ final class DataScope
         return in_array((int) $owner->id, self::ownerIds($viewer) ?? [], true);
     }
 
+    // ---------------- Historial creado por (created_by) ----------------
+    //
+    // Trazabilidad tipo auditoría (data_imports): el alcance se mide por
+    // quién creó el registro, con la misma matriz global/team/own.
+
+    public static function scopeCreatedBy(Builder $query, User $user): Builder
+    {
+        return self::scopeOwned($query, $user, 'created_by');
+    }
+
+    public static function canAccessCreatedBy(User $viewer, mixed $createdBy): bool
+    {
+        if (self::isUnconstrained($viewer)) {
+            return true;
+        }
+
+        if (blank($createdBy)) {
+            return false;
+        }
+
+        return in_array((int) $createdBy, self::ownerIds($viewer) ?? [], true);
+    }
+
     // ---------------- Tasks (assigned_to / created_by) ----------------
 
     public static function scopeTasks(Builder $query, User $user): Builder

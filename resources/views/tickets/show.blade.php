@@ -12,6 +12,7 @@
         <x-badge color="{{ $ticket->priority === 'urgent' ? 'red' : ($ticket->priority === 'high' ? 'yellow' : 'slate') }}">{{ ucfirst($ticket->priority) }}</x-badge>
         @if ($ticket->category)<x-badge>{{ $ticket->category->name }}</x-badge>@endif
         <span class="ml-auto flex gap-2 text-sm">
+            <a href="{{ route('tickets.print', $ticket) }}" target="_blank" class="text-slate-700 hover:underline">Imprimir</a>
             @if ($canUpdate)<a href="{{ route('tickets.edit', $ticket) }}" class="text-slate-700 hover:underline">Editar</a>@endif
             @can('delete', $ticket)
                 <form method="POST" action="{{ route('tickets.destroy', $ticket) }}" class="inline"

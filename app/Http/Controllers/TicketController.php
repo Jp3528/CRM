@@ -186,6 +186,26 @@ class TicketController extends Controller
         ]);
     }
 
+    public function print(Ticket $ticket): View
+    {
+        $this->authorize('view', $ticket);
+
+        $user = request()->user();
+
+        $ticket->load([
+            'company' => fn ($q) => $q->visibleTo($user)->select('id', 'trade_name', 'owner_id'),
+            'contact' => fn ($q) => $q->visibleTo($user)->select('id', 'first_name', 'last_name', 'company_id', 'owner_id'),
+            'assignee:id,name,email',
+            'creator:id,name',
+            'category:id,name',
+            'messages' => fn ($q) => $q->with(['user:id,name', 'contact:id,first_name,last_name'])->orderBy('created_at'),
+        ]);
+
+        return view('tickets.print', [
+            'ticket' => $ticket,
+        ]);
+    }
+
     public function edit(Ticket $ticket): View
     {
         $this->authorize('update', $ticket);

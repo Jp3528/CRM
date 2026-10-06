@@ -63,6 +63,10 @@ class PermissionSeeder extends Seeder
         // Fase 12 — Reportes y forecast (solo lectura; el alcance lo da DataScope).
         ['name' => 'reports.view', 'label' => 'View Reports', 'description' => 'Permite ver el centro de reportes.', 'group' => 'reports'],
         ['name' => 'reports.forecast', 'label' => 'View Forecast', 'description' => 'Permite ver el forecast comercial ponderado.', 'group' => 'reports'],
+        // Fase 13 — Importaciones y exportaciones de datos.
+        ['name' => 'imports.view', 'label' => 'View Imports', 'description' => 'Permite ver el historial y estado de importaciones.', 'group' => 'imports'],
+        ['name' => 'imports.create', 'label' => 'Create Imports', 'description' => 'Permite subir, previsualizar y confirmar importaciones de datos.', 'group' => 'imports'],
+        ['name' => 'exports.view', 'label' => 'Export Data', 'description' => 'Permite exportar listados y reportes a CSV, XLSX o PDF.', 'group' => 'exports'],
     ];
 
     public function run(): void
