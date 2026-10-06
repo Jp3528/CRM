@@ -27,6 +27,8 @@ Homestead.yaml
 Thumbs.db
 /storage/app/private/*
 !/storage/app/private/.gitignore
+/storage/app/backups/*
+!/storage/app/backups/.gitignore
 *.sqlite
 *.sqlite3
 *.dump
