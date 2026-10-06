@@ -50,6 +50,19 @@
                             <p class="mt-0.5 text-xs text-slate-400">
                                 {{ $opp->owner?->name ?? '—' }} · cierra {{ $opp->expected_close_date?->format('Y-m-d') ?? '—' }}
                             </p>
+
+                            @if ($canMove)
+                                <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between" @click.stop>
+                                    <label for="stage-select-{{ $opp->id }}" class="text-[10px] uppercase font-semibold text-slate-400">Etapa:</label>
+                                    <select id="stage-select-{{ $opp->id }}"
+                                        @change="moveCardViaSelect({{ $opp->id }}, $event.target.value, {{ $stage->id }})"
+                                        class="rounded text-[11px] py-0.5 px-1.5 border border-slate-200 bg-slate-50 text-slate-700 focus:ring-1 focus:ring-cyan-500">
+                                        @foreach ($stages as $s)
+                                            <option value="{{ $s->id }}" @selected($s->id === $stage->id)>{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
                         </article>
                     @endforeach
                     @if ($stage->opportunities->isEmpty())
@@ -100,11 +113,45 @@
                         const data = await response.json().catch(() => ({}));
                         throw new Error(data.message || 'No se pudo mover la oportunidad.');
                     }
+                    const sel = card.querySelector(`select`);
+                    if (sel) sel.value = stageId;
                 } catch (e) {
                     origin.prepend(card);
                     showKanbanError(e.message);
                 } finally {
                     this.draggedId = null;
+                }
+            },
+            async moveCardViaSelect(id, targetStageId, currentStageId) {
+                if (targetStageId == currentStageId) return;
+                const card = document.querySelector(`[data-id="${id}"]`);
+                const origin = card?.closest('[data-cards]');
+                const targetColumn = document.querySelector(`[data-stage-id="${targetStageId}"]`);
+                const target = targetColumn?.querySelector('[data-cards]');
+                if (!card || !target) return;
+
+                target.prepend(card);
+                hideKanbanError();
+
+                try {
+                    const response = await fetch(`/opportunities/${id}/stage`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({ pipeline_stage_id: targetStageId }),
+                    });
+                    if (!response.ok) {
+                        const data = await response.json().catch(() => ({}));
+                        throw new Error(data.message || 'No se pudo mover la oportunidad.');
+                    }
+                } catch (e) {
+                    origin.prepend(card);
+                    const sel = card.querySelector(`select`);
+                    if (sel) sel.value = currentStageId;
+                    showKanbanError(e.message);
                 }
             },
         };

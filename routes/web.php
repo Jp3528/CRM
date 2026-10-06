@@ -20,6 +20,7 @@ use App\Http\Controllers\DataImportController;
 use App\Http\Controllers\DataQualityController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ForecastController;
+use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceReportController;
 use App\Http\Controllers\InvoiceStatusController;
@@ -96,6 +97,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/search', [GlobalSearchController::class, 'search'])->name('search.index');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -2,7 +2,7 @@
 
 <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
     <div class="flex items-center gap-3">
-        <button type="button" x-on:click="sidebarOpen = true" class="rounded-md p-2 text-slate-500 hover:bg-slate-100 lg:hidden" aria-label="Abrir menú">
+        <button type="button" @click="sidebarOpen = true" :aria-expanded="sidebarOpen" aria-controls="mobile-sidebar" class="rounded-md p-2 text-slate-500 hover:bg-slate-100 lg:hidden" aria-label="Abrir menú de navegación">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <div>
@@ -10,6 +10,66 @@
             @isset($subheader)<p class="text-xs text-slate-500">{{ $subheader }}</p>@endisset
         </div>
     </div>
+
+    {{-- Barra de búsqueda global compacta (Fase 17) --}}
+    <div class="hidden sm:block flex-1 max-w-xs md:max-w-sm mx-4" x-data="{
+        q: '',
+        open: false,
+        results: [],
+        loading: false,
+        timer: null,
+        search() {
+            clearTimeout(this.timer);
+            if (this.q.length < 2) {
+                this.results = [];
+                this.open = false;
+                return;
+            }
+            this.loading = true;
+            this.timer = setTimeout(() => {
+                fetch('{{ route('search.index') }}?q=' + encodeURIComponent(this.q), {
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    this.results = data.items || [];
+                    this.open = true;
+                    this.loading = false;
+                })
+                .catch(() => { this.loading = false; });
+            }, 250);
+        }
+    }">
+        <form method="GET" action="{{ route('search.index') }}" class="relative" @click.outside="open = false">
+            <div class="relative">
+                <input type="text" name="q" x-model="q" @input="search()" @focus="if(q.length >= 2) open = true"
+                       placeholder="Buscar..."
+                       class="w-full rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 text-xs">
+                    🔍
+                </span>
+            </div>
+
+            <div x-show="open && results.length > 0" x-cloak
+                 class="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-xl text-xs divide-y divide-slate-50">
+                <template x-for="item in results" :key="item.url">
+                    <a :href="item.url" class="flex items-center justify-between px-3 py-2 hover:bg-slate-50 transition-colors">
+                        <div class="min-w-0 pr-2">
+                            <span class="font-medium text-slate-900 block truncate" x-text="item.title"></span>
+                            <span class="text-[10px] text-slate-400 block truncate" x-text="item.meta"></span>
+                        </div>
+                        <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600 shrink-0" x-text="item.type"></span>
+                    </a>
+                </template>
+                <div class="p-2 text-center bg-slate-50">
+                    <button type="submit" class="text-[11px] font-medium text-cyan-700 hover:underline">
+                        Ver todos los resultados →
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
     <div class="flex items-center gap-2">
         {{-- Campana de notificaciones internas --}}
         <div class="relative" x-data="{
