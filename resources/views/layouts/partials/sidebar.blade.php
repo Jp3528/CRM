@@ -34,6 +34,9 @@ $navSections = [
         ['label' => 'Reportes', 'route' => 'reports.index', 'can' => 'reports.view', 'soon' => false],
         ['label' => 'Forecast', 'route' => 'forecast.index', 'can' => 'reports.forecast', 'soon' => false],
     ]],
+    ['title' => 'Datos', 'items' => [
+        ['label' => 'Importaciones', 'route' => 'imports.index', 'can' => 'imports.view', 'soon' => false],
+    ]],
 ];
 $navAdmin = [
     ['label' => 'Usuarios', 'route' => 'admin.users.index', 'can' => 'users.view', 'soon' => false],

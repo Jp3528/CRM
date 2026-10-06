@@ -14,6 +14,7 @@ use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataImportController;
 use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceReportController;
@@ -235,6 +236,16 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('reports/campaigns', CampaignReportController::class)->name('reports.campaigns');
     Route::get('reports/automations', AutomationReportController::class)->name('reports.automations');
     Route::get('forecast', ForecastController::class)->name('forecast.index');
+
+    // Importaciones CSV de datos (Fase 13). Asistente, plantilla, mapeo, preview y confirmación.
+    Route::get('imports', [DataImportController::class, 'index'])->name('imports.index');
+    Route::get('imports/create', [DataImportController::class, 'create'])->name('imports.create');
+    Route::get('imports/template/{module}', [DataImportController::class, 'template'])->name('imports.template');
+    Route::post('imports/upload', [DataImportController::class, 'upload'])->name('imports.upload');
+    Route::post('imports/preview', [DataImportController::class, 'preview'])->name('imports.preview');
+    Route::post('imports/confirm', [DataImportController::class, 'confirm'])->name('imports.confirm');
+    Route::get('imports/{import}', [DataImportController::class, 'show'])->name('imports.show');
+    Route::get('imports/{import}/errors', [DataImportController::class, 'errors'])->name('imports.errors');
 
     // Placeholders controlados de módulos futuros (sin CRUD, vista "próximamente").
     foreach ([
