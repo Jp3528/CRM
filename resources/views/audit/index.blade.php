@@ -11,10 +11,10 @@
 
     {{-- Filtros de búsqueda --}}
     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-        <form method="GET" action="{{ route('audit.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        <form method="GET" action="{{ route('audit.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <div>
                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Entidad</label>
-                <select name="entity_type" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
+                <select name="entity_type" class="w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
                     <option value="">Todas las entidades</option>
                     @foreach ($entityTypes as $type)
                         <option value="{{ $type }}" @selected(request('entity_type') === $type)>{{ class_basename($type) }} ({{ $type }})</option>
@@ -24,7 +24,7 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Acción</label>
-                <select name="action" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
+                <select name="action" class="w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
                     <option value="">Todas las acciones</option>
                     @foreach ($actions as $act)
                         <option value="{{ $act }}" @selected(request('action') === $act)>{{ $act }}</option>
@@ -34,7 +34,7 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Usuario</label>
-                <select name="user_id" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
+                <select name="user_id" class="w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
                     <option value="">Todos los usuarios</option>
                     @foreach ($users as $u)
                         <option value="{{ $u->id }}" @selected(request('user_id') == $u->id)>{{ $u->name }} ({{ $u->email }})</option>
@@ -44,12 +44,12 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Desde</label>
-                <input type="date" name="date_from" value="{{ request('date_from') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
+                <input type="date" name="date_from" value="{{ request('date_from') }}" class="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
             </div>
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Hasta</label>
-                <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
+                <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-cyan-500 focus:ring-cyan-500">
             </div>
 
             <div class="flex items-end gap-2">

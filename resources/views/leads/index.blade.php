@@ -8,33 +8,33 @@
 
 @section('content')
     <x-card title="Leads" subtitle="{{ $leads->total() }} registro(s)">
-        <form method="GET" action="{{ route('leads.index') }}" class="mb-4 grid gap-2 md:grid-cols-6">
+        <form method="GET" action="{{ route('leads.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar nombre, empresa, email, teléfono…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
-            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <select name="status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los estados</option>
                 @foreach ($statuses as $s)<option value="{{ $s }}" @selected($filters['status'] === $s)>{{ ucfirst($s) }}</option>@endforeach
             </select>
-            <select name="source" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="source" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los orígenes</option>
                 @foreach ($sources as $s)<option value="{{ $s }}" @selected($filters['source'] === $s)>{{ ucfirst($s) }}</option>@endforeach
             </select>
-            <select name="owner_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="owner_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-3">
                 <option value="">Todos los responsables</option>
                 @foreach ($owners as $o)<option value="{{ $o->id }}" @selected((string) $filters['owner_id'] === (string) $o->id)>{{ $o->name }}</option>@endforeach
             </select>
-            <div class="flex gap-2">
-                <input type="number" name="score_min" value="{{ $filters['score_min'] }}" placeholder="Score mín" min="0" max="100"
-                    class="w-full rounded-md border-slate-300 px-2 py-2 text-sm">
-                <input type="number" name="score_max" value="{{ $filters['score_max'] }}" placeholder="Score máx" min="0" max="100"
-                    class="w-full rounded-md border-slate-300 px-2 py-2 text-sm">
-            </div>
-            <select name="converted" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="converted" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="all" @selected($filters['converted'] === 'all')>Todos</option>
                 <option value="no" @selected($filters['converted'] === 'no')>Sin convertir</option>
                 <option value="yes" @selected($filters['converted'] === 'yes')>Convertidos</option>
             </select>
-            <div class="flex gap-2 md:col-span-6">
+            <div class="sm:col-span-2 md:col-span-3 lg:col-span-3 grid grid-cols-2 gap-2">
+                <input type="number" name="score_min" value="{{ $filters['score_min'] }}" placeholder="Score mín" min="0" max="100" title="Score mínimo" aria-label="Score mínimo"
+                    class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
+                <input type="number" name="score_max" value="{{ $filters['score_max'] }}" placeholder="Score máx" min="0" max="100" title="Score máximo" aria-label="Score máximo"
+                    class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
+            </div>
+            <div class="col-span-full sm:col-span-2 md:col-span-3 lg:col-span-9 flex flex-wrap items-center gap-2">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('leads.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @if (auth()->user()?->hasPermission('exports.view'))

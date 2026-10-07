@@ -8,28 +8,28 @@
 
 @section('content')
     <x-card title="Ventas" subtitle="{{ $sales->total() }} registro(s)">
-        <form method="GET" action="{{ route('sales.index') }}" class="mb-4 grid gap-2 md:grid-cols-6">
+        <form method="GET" action="{{ route('sales.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar número, cotización, empresa…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
-            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <select name="status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los estados</option>
                 @foreach ($statuses as $s)<option value="{{ $s }}" @selected($filters['status'] === $s)>{{ ucfirst($s) }}</option>@endforeach
             </select>
-            <select name="company_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="company_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todas las empresas</option>
                 @foreach ($companies as $c)<option value="{{ $c->id }}" @selected((string) $filters['company_id'] === (string) $c->id)>{{ $c->trade_name }}</option>@endforeach
             </select>
-            <select name="owner_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="owner_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los responsables</option>
                 @foreach ($owners as $o)<option value="{{ $o->id }}" @selected((string) $filters['owner_id'] === (string) $o->id)>{{ $o->name }}</option>@endforeach
             </select>
-            <div class="flex gap-2">
-                <input type="date" name="sold_from" value="{{ $filters['sold_from'] }}" title="Desde"
-                    class="w-full rounded-md border-slate-300 px-2 py-2 text-sm">
-                <input type="date" name="sold_to" value="{{ $filters['sold_to'] }}" title="Hasta"
-                    class="w-full rounded-md border-slate-300 px-2 py-2 text-sm">
+            <div class="sm:col-span-2 md:col-span-3 lg:col-span-3 grid grid-cols-2 gap-2">
+                <input type="date" name="sold_from" value="{{ $filters['sold_from'] }}" title="Vendida desde" aria-label="Vendida desde"
+                    class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
+                <input type="date" name="sold_to" value="{{ $filters['sold_to'] }}" title="Vendida hasta" aria-label="Vendida hasta"
+                    class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
             </div>
-            <div class="flex gap-2 md:col-span-6">
+            <div class="col-span-full flex flex-wrap items-center gap-2 pt-1">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('sales.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @if (auth()->user()?->hasPermission('exports.view'))

@@ -8,29 +8,29 @@
 
 @section('content')
     <x-card title="Actividades" subtitle="{{ $activities->total() }} registro(s)">
-        <form method="GET" action="{{ route('activities.index') }}" class="mb-4 grid gap-2 md:grid-cols-6">
+        <form method="GET" action="{{ route('activities.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar título o descripción…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
-            <select name="type" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <select name="type" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los tipos</option>
                 @foreach ($types as $t)<option value="{{ $t }}" @selected($filters['type'] === $t)>{{ ucfirst(str_replace('_', ' ', $t)) }}{{ in_array($t, \App\Models\Activity::SYSTEM_TYPES, true) ? ' (sistema)' : '' }}</option>@endforeach
             </select>
-            <select name="user_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="user_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los usuarios</option>
                 @foreach ($users as $u)<option value="{{ $u->id }}" @selected((string) $filters['user_id'] === (string) $u->id)>{{ $u->name }}</option>@endforeach
             </select>
-            <select name="related_type" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="related_type" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Toda entidad</option>
                 <option value="none" @selected($filters['related_type'] === 'none')>Sin entidad</option>
                 @foreach ($relatedTypes as $t)<option value="{{ $t }}" @selected($filters['related_type'] === $t)>{{ ucfirst($t) }}</option>@endforeach
             </select>
-            <div class="flex gap-2">
-                <input type="date" name="from" value="{{ $filters['from'] }}"
-                    class="w-full rounded-md border-slate-300 px-2 py-2 text-sm">
-                <input type="date" name="to" value="{{ $filters['to'] }}"
-                    class="w-full rounded-md border-slate-300 px-2 py-2 text-sm">
+            <div class="sm:col-span-2 md:col-span-3 lg:col-span-3 grid grid-cols-2 gap-2">
+                <input type="date" name="from" value="{{ $filters['from'] }}" title="Fecha desde" aria-label="Fecha desde"
+                    class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
+                <input type="date" name="to" value="{{ $filters['to'] }}" title="Fecha hasta" aria-label="Fecha hasta"
+                    class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
             </div>
-            <div class="flex gap-2 md:col-span-6">
+            <div class="col-span-full flex flex-wrap items-center gap-2 pt-1">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('activities.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @can('create', App\Models\Activity::class)

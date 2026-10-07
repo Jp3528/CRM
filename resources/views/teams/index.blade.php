@@ -14,17 +14,17 @@
             </div>
         @endif
 
-        <form method="GET" action="{{ route('teams.index') }}" class="mb-4 grid gap-2 md:grid-cols-4">
+        <form method="GET" action="{{ route('teams.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar por nombre o slug…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-2 lg:col-span-6">
 
-            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm sm:col-span-1 md:col-span-1 lg:col-span-3">
                 <option value="">Todos los estados</option>
                 <option value="active" @selected($filters['status'] === 'active')>Activos</option>
                 <option value="inactive" @selected($filters['status'] === 'inactive')>Inactivos</option>
             </select>
 
-            <div class="flex gap-2">
+            <div class="col-span-full flex flex-wrap items-center gap-2 pt-1">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('teams.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @if ($canCreate)

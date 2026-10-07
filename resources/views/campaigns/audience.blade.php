@@ -14,25 +14,25 @@
         </div>
 
         @if ($tab === 'contacts')
-            <form method="GET" action="{{ route('campaigns.audience', $campaign) }}" class="mb-4 grid gap-2 md:grid-cols-4">
+            <form method="GET" action="{{ route('campaigns.audience', $campaign) }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
                 <input type="hidden" name="tab" value="contacts">
-                <select name="contact_status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <select name="contact_status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm">
                     <option value="">Todos los estados</option>
                     @foreach ($contactStatuses as $s)<option value="{{ $s }}" @selected(($filters['contact_status'] ?? '') === $s)>{{ ucfirst($s) }}</option>@endforeach
                 </select>
-                <select name="contact_owner" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <select name="contact_owner" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm">
                     <option value="">Todos los responsables</option>
                     @foreach ($owners as $u)<option value="{{ $u->id }}" @selected((string) ($filters['contact_owner'] ?? '') === (string) $u->id)>{{ $u->name }}</option>@endforeach
                 </select>
-                <select name="contact_company" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <select name="contact_company" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm">
                     <option value="">Todas las empresas</option>
                     @foreach ($companies as $c)<option value="{{ $c->id }}" @selected((string) ($filters['contact_company'] ?? '') === (string) $c->id)>{{ $c->trade_name }}</option>@endforeach
                 </select>
-                <select name="contact_tag" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <select name="contact_tag" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm">
                     <option value="">Todas las etiquetas</option>
                     @foreach ($tags as $t)<option value="{{ $t->id }}" @selected((string) ($filters['contact_tag'] ?? '') === (string) $t->id)>{{ $t->name }}</option>@endforeach
                 </select>
-                <div class="flex gap-2 md:col-span-4">
+                <div class="col-span-full flex flex-wrap items-center gap-2 pt-1">
                     <x-button>Vista previa</x-button>
                     @if ($canManage)
                         <button type="submit" form="bulk-contacts" class="inline-flex items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Agregar {{ $contactPreview }} a la campaña</button>
@@ -50,22 +50,22 @@
                 </form>
             @endif
         @else
-            <form method="GET" action="{{ route('campaigns.audience', $campaign) }}" class="mb-4 grid gap-2 md:grid-cols-4">
+            <form method="GET" action="{{ route('campaigns.audience', $campaign) }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
                 <input type="hidden" name="tab" value="leads">
-                <select name="lead_status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <select name="lead_status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm">
                     <option value="">Todos los estados</option>
                     @foreach ($leadStatuses as $s)<option value="{{ $s }}" @selected(($filters['lead_status'] ?? '') === $s)>{{ ucfirst($s) }}</option>@endforeach
                 </select>
-                <select name="lead_source" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <select name="lead_source" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm">
                     <option value="">Todos los orígenes</option>
                     @foreach ($leadSources as $s)<option value="{{ $s }}" @selected(($filters['lead_source'] ?? '') === $s)>{{ ucfirst($s) }}</option>@endforeach
                 </select>
-                <input type="number" name="lead_score_min" min="0" max="100" placeholder="Score mínimo" value="{{ $filters['lead_score_min'] ?? '' }}" class="rounded-md border-slate-300 px-3 py-2 text-sm">
-                <select name="lead_tag" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                <input type="number" name="lead_score_min" min="0" max="100" placeholder="Score mínimo" value="{{ $filters['lead_score_min'] ?? '' }}" class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm">
+                <select name="lead_tag" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm">
                     <option value="">Todas las etiquetas</option>
                     @foreach ($tags as $t)<option value="{{ $t->id }}" @selected((string) ($filters['lead_tag'] ?? '') === (string) $t->id)>{{ $t->name }}</option>@endforeach
                 </select>
-                <div class="flex gap-2 md:col-span-4">
+                <div class="col-span-full flex flex-wrap items-center gap-2 pt-1">
                     <x-button>Vista previa</x-button>
                     @if ($canManage)
                         <button type="submit" form="bulk-leads" class="inline-flex items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Agregar {{ $leadPreview }} a la campaña</button>

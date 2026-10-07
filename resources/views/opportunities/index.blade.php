@@ -11,32 +11,32 @@
         <div class="mb-3 flex gap-2 text-sm">
             <a href="{{ route('opportunities.kanban', request()->only('pipeline_id')) }}" class="text-slate-700 hover:underline">Ver Kanban →</a>
         </div>
-        <form method="GET" action="{{ route('opportunities.index') }}" class="mb-4 grid gap-2 md:grid-cols-6">
+        <form method="GET" action="{{ route('opportunities.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar nombre, empresa, contacto…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
-            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <select name="status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los estados</option>
                 @foreach ($statuses as $s)<option value="{{ $s }}" @selected($filters['status'] === $s)>{{ ucfirst($s) }}</option>@endforeach
             </select>
-            <select name="pipeline_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="pipeline_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los pipelines</option>
                 @foreach ($pipelines as $p)<option value="{{ $p->id }}" @selected((string) $filters['pipeline_id'] === (string) $p->id)>{{ $p->name }}</option>@endforeach
             </select>
-            <select name="owner_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="owner_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los responsables</option>
                 @foreach ($owners as $o)<option value="{{ $o->id }}" @selected((string) $filters['owner_id'] === (string) $o->id)>{{ $o->name }}</option>@endforeach
             </select>
-            <select name="company_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="company_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-3">
                 <option value="">Todas las empresas</option>
                 @foreach ($companies as $c)<option value="{{ $c->id }}" @selected((string) $filters['company_id'] === (string) $c->id)>{{ $c->trade_name }}</option>@endforeach
             </select>
-            <div class="flex gap-2">
-                <input type="number" step="0.01" min="0" name="amount_min" value="{{ $filters['amount_min'] }}" placeholder="Monto mín"
-                    class="w-full rounded-md border-slate-300 px-2 py-2 text-sm">
-                <input type="number" step="0.01" min="0" name="amount_max" value="{{ $filters['amount_max'] }}" placeholder="Monto máx"
-                    class="w-full rounded-md border-slate-300 px-2 py-2 text-sm">
+            <div class="sm:col-span-2 md:col-span-3 lg:col-span-3 grid grid-cols-2 gap-2">
+                <input type="number" step="0.01" min="0" name="amount_min" value="{{ $filters['amount_min'] }}" placeholder="Monto mín" title="Monto mínimo" aria-label="Monto mínimo"
+                    class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
+                <input type="number" step="0.01" min="0" name="amount_max" value="{{ $filters['amount_max'] }}" placeholder="Monto máx" title="Monto máximo" aria-label="Monto máximo"
+                    class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
             </div>
-            <div class="flex gap-2 md:col-span-6">
+            <div class="col-span-full sm:col-span-2 md:col-span-3 lg:col-span-9 flex flex-wrap items-center gap-2">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('opportunities.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @if (auth()->user()?->hasPermission('exports.view'))

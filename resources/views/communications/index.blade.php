@@ -8,22 +8,22 @@
 
 @section('content')
     <x-card title="Comunicaciones" subtitle="{{ $communications->total() }} registro(s) · solo objetivos en tu alcance">
-        <form method="GET" action="{{ route('communications.index') }}" class="mb-4 grid gap-2 md:grid-cols-5">
+        <form method="GET" action="{{ route('communications.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar asunto o cuerpo…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm">
-            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-2 lg:col-span-4">
+            <select name="status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm sm:col-span-1 md:col-span-1 lg:col-span-2">
                 <option value="">Todos los estados</option>
                 @foreach ($statuses as $s)<option value="{{ $s }}" @selected($filters['status'] === $s)>{{ ucfirst(str_replace('_', ' ', $s)) }}</option>@endforeach
             </select>
-            <select name="channel" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="channel" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm sm:col-span-1 md:col-span-1 lg:col-span-3">
                 <option value="">Todos los canales</option>
                 @foreach ($channels as $c)<option value="{{ $c }}" @selected($filters['channel'] === $c)>{{ ucfirst($c) }}</option>@endforeach
             </select>
-            <select name="campaign_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="campaign_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm sm:col-span-1 md:col-span-1 lg:col-span-3">
                 <option value="">Todas las campañas</option>
                 @foreach ($campaigns as $c)<option value="{{ $c->id }}" @selected((string) $filters['campaign_id'] === (string) $c->id)>{{ $c->name }}</option>@endforeach
             </select>
-            <div class="flex gap-2 md:col-span-5">
+            <div class="col-span-full flex flex-wrap items-center gap-2 pt-1">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('communications.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @can('create', App\Models\Communication::class)

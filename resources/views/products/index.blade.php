@@ -8,22 +8,22 @@
 
 @section('content')
     <x-card title="Productos" subtitle="{{ $products->total() }} registro(s)">
-        <form method="GET" action="{{ route('products.index') }}" class="mb-4 grid gap-2 md:grid-cols-6">
+        <form method="GET" action="{{ route('products.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar SKU, nombre, descripción…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
-            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-2 lg:col-span-4">
+            <select name="status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm sm:col-span-1 md:col-span-1 lg:col-span-2">
                 <option value="">Todos los estados</option>
                 @foreach ($statuses as $s)<option value="{{ $s }}" @selected($filters['status'] === $s)>{{ ucfirst($s) }}</option>@endforeach
             </select>
-            <select name="category_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="category_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm sm:col-span-1 md:col-span-1 lg:col-span-3">
                 <option value="">Todas las categorías</option>
                 @foreach ($categories as $c)<option value="{{ $c->id }}" @selected((string) $filters['category_id'] === (string) $c->id)>{{ $c->name }}</option>@endforeach
             </select>
-            <select name="unit" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="unit" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm sm:col-span-1 md:col-span-1 lg:col-span-3">
                 <option value="">Todas las unidades</option>
                 @foreach ($units as $u)<option value="{{ $u }}" @selected($filters['unit'] === $u)>{{ ucfirst($u) }}</option>@endforeach
             </select>
-            <div class="flex gap-2 md:col-span-6">
+            <div class="col-span-full flex flex-wrap items-center gap-2 pt-1">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('products.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @can('create', App\Models\Product::class)

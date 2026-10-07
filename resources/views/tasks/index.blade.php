@@ -8,30 +8,30 @@
 
 @section('content')
     <x-card title="Tareas" subtitle="{{ $tasks->total() }} registro(s)">
-        <form method="GET" action="{{ route('tasks.index') }}" class="mb-4 grid gap-2 md:grid-cols-6">
+        <form method="GET" action="{{ route('tasks.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar título o descripción…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
-            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <select name="status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los estados</option>
                 @foreach ($statuses as $s)<option value="{{ $s }}" @selected($filters['status'] === $s)>{{ ucfirst(str_replace('_', ' ', $s)) }}</option>@endforeach
             </select>
-            <select name="priority" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="priority" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todas las prioridades</option>
                 @foreach ($priorities as $p)<option value="{{ $p }}" @selected($filters['priority'] === $p)>{{ ucfirst($p) }}</option>@endforeach
             </select>
-            <select name="assigned_to" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="assigned_to" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los asignados</option>
                 @foreach ($users as $u)<option value="{{ $u->id }}" @selected((string) $filters['assigned_to'] === (string) $u->id)>{{ $u->name }}</option>@endforeach
             </select>
-            <select name="related_type" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="related_type" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-3">
                 <option value="">Toda entidad</option>
                 <option value="none" @selected($filters['related_type'] === 'none')>Sin entidad</option>
                 @foreach ($relatedTypes as $t)<option value="{{ $t }}" @selected($filters['related_type'] === $t)>{{ ucfirst($t) }}</option>@endforeach
             </select>
-            <select name="due" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="due" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm sm:col-span-2 md:col-span-3 lg:col-span-3">
                 @foreach (['all' => 'Todos los vencimientos', 'today' => 'Hoy', 'overdue' => 'Vencidas', 'upcoming' => 'Próximas', 'completed' => 'Completadas'] as $v => $l)<option value="{{ $v }}" @selected($filters['due'] === $v)>{{ $l }}</option>@endforeach
             </select>
-            <div class="flex gap-2 md:col-span-6">
+            <div class="col-span-full sm:col-span-2 md:col-span-3 lg:col-span-9 flex flex-wrap items-center gap-2">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('tasks.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @if (auth()->user()?->hasPermission('exports.view'))

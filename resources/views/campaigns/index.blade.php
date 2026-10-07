@@ -8,23 +8,24 @@
 
 @section('content')
     <x-card title="Campañas" subtitle="{{ $campaigns->total() }} registro(s)">
-        <form method="GET" action="{{ route('campaigns.index') }}" class="mb-4 grid gap-2 md:grid-cols-6">
+        <form method="GET" action="{{ route('campaigns.index') }}" class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12">
             <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Buscar nombre o descripción…"
-                class="rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 md:col-span-2">
-            <select name="status" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+                class="w-full min-w-0 rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <select name="status" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los estados</option>
                 @foreach ($statuses as $s)<option value="{{ $s }}" @selected($filters['status'] === $s)>{{ ucfirst($s) }}</option>@endforeach
             </select>
-            <select name="type" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="type" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los tipos</option>
                 @foreach ($types as $t)<option value="{{ $t }}" @selected($filters['type'] === $t)>{{ ucfirst($t) }}</option>@endforeach
             </select>
-            <select name="owner_id" class="rounded-md border-slate-300 px-2 py-2 text-sm">
+            <select name="owner_id" class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm lg:col-span-2">
                 <option value="">Todos los responsables</option>
                 @foreach ($owners as $u)<option value="{{ $u->id }}" @selected((string) $filters['owner_id'] === (string) $u->id)>{{ $u->name }}</option>@endforeach
             </select>
-            <input type="date" name="from" value="{{ $filters['from'] }}" class="rounded-md border-slate-300 px-2 py-2 text-sm">
-            <div class="flex gap-2 md:col-span-6">
+            <input type="date" name="from" value="{{ $filters['from'] }}" title="Fecha desde" aria-label="Fecha desde"
+                class="w-full min-w-0 rounded-md border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 sm:col-span-2 md:col-span-3 lg:col-span-3">
+            <div class="col-span-full flex flex-wrap items-center gap-2 pt-1">
                 <x-button>Buscar</x-button>
                 <a href="{{ route('campaigns.index') }}" class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Limpiar</a>
                 @can('create', App\Models\Campaign::class)
