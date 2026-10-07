@@ -19,6 +19,7 @@ jobs:
         with:
           php-version: '8.3'
           extensions: mbstring, bcmath, zip, gd
+          coverage: none
 
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
@@ -48,13 +49,14 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, bcmath, pdo_sqlite, zip, gd
+          extensions: mbstring, bcmath, pdo_sqlite, sqlite3, zip, gd, curl, dom, xml
+          coverage: none
 
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Run PHPUnit (SQLite)
-        run: php artisan test --configuration=phpunit.xml
+        run: ./vendor/bin/phpunit --configuration=phpunit.xml
 
   test-postgresql:
     name: Test Suite (PostgreSQL 17)
@@ -67,7 +69,7 @@ jobs:
           POSTGRES_USER: nexuscrm_test
           POSTGRES_PASSWORD: nexuscrm_test_secret
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 5s
@@ -82,7 +84,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, bcmath, pdo_pgsql, zip, gd
+          extensions: mbstring, bcmath, pdo_pgsql, pdo_sqlite, sqlite3, zip, gd, curl, dom, xml
+          coverage: none
 
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
@@ -91,8 +94,8 @@ jobs:
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
-          DB_PORT: 5432
+          DB_PORT: 5433
           DB_DATABASE: nexuscrm_test
           DB_USERNAME: nexuscrm_test
           DB_PASSWORD: nexuscrm_test_secret
-        run: php artisan test --configuration=phpunit.pgsql.xml
+        run: ./vendor/bin/phpunit --configuration=phpunit.pgsql.xml

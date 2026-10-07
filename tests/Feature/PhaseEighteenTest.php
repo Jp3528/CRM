@@ -35,6 +35,10 @@ class PhaseEighteenTest extends TestCase
      */
     public function test_safety_guard_prevents_tests_from_running_against_non_testing_environment(): void
     {
+        $originalEnv = Config::get('app.env', 'testing');
+        $originalConnection = Config::get('database.default');
+        $originalDatabase = Config::get("database.connections.{$originalConnection}.database");
+
         // 1. Guard contra APP_ENV distinto de testing
         Config::set('app.env', 'production');
         $abortedEnv = false;
@@ -46,7 +50,7 @@ class PhaseEighteenTest extends TestCase
         $this->assertTrue($abortedEnv, 'El guard debe abortar si APP_ENV no es testing');
 
         // Restaurar para siguiente chequeo
-        Config::set('app.env', 'testing');
+        Config::set('app.env', $originalEnv);
 
         // 2. Guard contra base de datos relacional no identificada como test
         Config::set('database.default', 'pgsql');
@@ -60,8 +64,8 @@ class PhaseEighteenTest extends TestCase
         $this->assertTrue($abortedDb, 'El guard debe abortar si la base PostgreSQL no contiene test');
 
         // Restaurar estado
-        Config::set('database.default', 'sqlite');
-        Config::set('database.connections.sqlite.database', ':memory:');
+        Config::set('database.default', $originalConnection);
+        Config::set("database.connections.{$originalConnection}.database", $originalDatabase);
     }
 
     /**
